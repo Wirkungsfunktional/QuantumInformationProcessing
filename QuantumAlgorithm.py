@@ -37,6 +37,9 @@ class QuantumAlgorithm:
         self.quantum_circuit.x(self.quantum_register[n])
         self.input_state[n] = self.input_state[n] ^ 1 #Inversion by XOR
 
+    def set_nth_qbit(self, n, theta):
+        self.quantum_circuit.ry(theta, self.quantum_register[n])
+
     def get_input_state(self):
         return self.input_state
 

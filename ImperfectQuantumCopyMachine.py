@@ -30,6 +30,8 @@ beta = -np.sqrt(np.arcsin(0.5 - np.sqrt(2)/3.0))
 algo = QA.QuantumAlgorithm('ImperfectQuantumCopy', 3, 3)
 #algo.invert_nth_qbit(0)
 
+algo.set_nth_qbit(0, np.pi/2.0)
+
 algo.add_gate("rotate_y", [1], alpha)
 algo.add_gate("CNOT", [1, 2])
 algo.add_gate("rotate_y", [1], beta)
