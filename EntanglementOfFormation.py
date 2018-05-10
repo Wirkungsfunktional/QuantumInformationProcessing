@@ -23,16 +23,6 @@ representations of the density matrix.
 """
 
 
-def shannon_1bit(x):
-    """Compute the classical entropy of the bit system, that '0' occure with
-    probability x and '1' with (1 - x). It is zero at x = 0 or x = 1 and maximal
-    at x = 0.5 which means 1."""
-    return -x * np.log2(x) - (1-x) * np.log2(1 - x)
-
-
-def entanglement_2qbit(c):
-    return shannon_1bit( (1 + np.sqrt(1 - c**2) )/2.0 )
-
 
 # Qubit states in computational basis
 q0 = np.array([0, 1])
@@ -44,63 +34,76 @@ q10 = np.outer(q1, q0).flatten()
 q11 = np.outer(q1, q1).flatten()
 
 psi_m = (q01 - q10) / np.sqrt(2)
-psi_p = (q01 + q10) / np.sqrt(2)
+psi_p = (q01 + np.sqrt(29)*q10) / np.sqrt(30)
 phi_m = (q00 - q11) / np.sqrt(2)
 phi_p = (q00 + q11) / np.sqrt(2)
 
+sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
+
+
+# Computational Functions
+def shannon_1bit(x):
+    """Compute the classical entropy of the bit system, that '0' occure with
+    probability x and '1' with (1 - x). It is zero at x = 0 or x = 1 and maximal
+    at x = 0.5 which means 1."""
+    return -x * np.log2(x) - (1-x) * np.log2(1 - x)
+
+def entanglement_2qbit(c):
+    """Compute the Entanglement of Formation according to Woot1998 of an 2-Qubit
+    State. It takes the Concurrency (@see concurrency(rho) ) as input."""
+    return shannon_1bit( (1 + np.sqrt(1 - c**2) )/2.0 )
+
 def density_matrix(state):
+    """Compute the outer product of $\ket{state}\bra{state}$ of an Vector state."""
     return np.outer(state, state)
 
 def werner_state(p, state):
+    """Compute the werner state, which is the superposition of an entangled
+    state (state) and the totally mixed state, which is the Identity operator."""
     return p*density_matrix(state) + (1 - p)*np.eye(4)/4.0
 
-
-
 def concurrency(rho):
-    sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
+    """Compute the Concurrency of a desity matrix according to Woot1998."""
     rho_tilde = np.dot(sigma_y_4d, np.dot(rho, sigma_y_4d))
-    #rho_sqrt = sl.sqrtm(rho)
-    R_test = np.dot(rho, rho_tilde)
-    #R = sl.sqrtm(np.dot(rho_sqrt, np.dot(rho_tilde, rho_sqrt)))
-    ew, ev = np.linalg.eig(R_test)
-    #ew2, ev2 = np.linalg.eig(R)
+    R = np.dot(rho, rho_tilde)
+    ew, ev = np.linalg.eig(R)
     ew = np.sort(np.sqrt(ew))
     return np.max([0, ew[3] - ew[0] - ew[1] - ew[2]])
 
+def fidelity(rho1, rho2):
+    """Compute the Fidelity of two desity operators. The Fidelity is a measure,
+    how far apart two matrices are. Here the square of the Trace will be
+    returned. Sometimes the root of this is called by fidelity."""
+    try:
+        rho1_sqrt = sl.sqrtm(rho1)
+        R = sl.sqrtm(np.dot( rho1_sqrt , np.dot(rho2, rho1_sqrt) ))
+    except:
+        print("Computation failed, return 0 as fidelity.")
+        return 0
+    return np.trace(R)**2
 
+
+# Main functions
 def plot_entanglement():
     n = 500
     p = np.linspace(0, 1, n)
     entanglement = np.zeros(n)
     conc = np.zeros(n)
+    dist = np.zeros(n)
     for i, pp in enumerate(p):
-        try:
-            conc[i] = concurrency(werner_state(pp, psi_p))
-            entanglement[i] = entanglement_2qbit(conc[i])
-        except:
-            pass
+        w = werner_state(pp, psi_m)
+        dist[i] = fidelity(w, np.dot(sigma_y_4d, np.dot(w, sigma_y_4d)))
+        conc[i] = concurrency(w)
+        entanglement[i] = entanglement_2qbit(conc[i])
 
-    plt.plot(p, entanglement)
-    plt.plot(p, conc)
+    plt.plot(p, dist, label='Fidelity of rho and rho_tilde')
+    plt.plot(p, entanglement, label="Entanglement of Formation")
+    plt.plot(p, conc, label="Concurrency")
+    plt.xlabel("p")
+    plt.legend()
     plt.show()
 
 
-
-
-class QbitRegister():
-    def __init__(self, n, state):
-        self.number_of_qbits = n
-        self.qbits = state
-        self.single_qbit_in_comp_basis = [np.array([1, 0]), np.array([0, 1])]
-
-    def get_register_in_comp_basis(self):
-        ret = self.single_qbit_in_comp_basis[self.qbits[0]]
-        for i in range(1, self.number_of_qbits):
-            ret = np.outer(self.single_qbit_in_comp_basis[self.qbits[i]], ret).flatten()
-        return ret
-
-    def get_desity_matrix_in_comp_basis(self):
-        state_in_comp_basis = self.get_register_in_comp_basis()
-        return np.outer(state_in_comp_basis, state_in_comp_basis)
-
-plot_entanglement()
+if __name__ == '__main__':
+    print(__doc__)
+    plot_entanglement()
