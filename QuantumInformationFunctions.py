@@ -3,6 +3,11 @@ import scipy.linalg as sl
 from matplotlib import pyplot as plt
 
 
+#TODO: Partial trace
+#TODO: Partial transpose
+#TODO: Matrix tensor product
+
+
 
 # Qubit states in computational basis
 q0 = np.array([1, 0])
@@ -18,6 +23,7 @@ psi_p = (q01 + q10) / np.sqrt(2)
 phi_m = (q00 - q11) / np.sqrt(2)
 phi_p = (q00 + q11) / np.sqrt(2)
 
+sigma_y_4d_2 = np.kron(np.array([[0, -1],[1, 0]])*1.j, np.array([[0, -1],[1, 0]])*1.j)
 sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
 
 
@@ -56,6 +62,12 @@ def fidelity(rho1, rho2):
     """Compute the Fidelity of two desity operators. The Fidelity is a measure,
     how far apart two matrices are. Here the square of the Trace will be
     returned. Sometimes the root of this is called by fidelity."""
+    if np.isclose(purity(rho1), 1.0):
+        print("rho1 is pure") # TODO: Retrieve State form desity matrix and use
+        # diferent formular for this, because the following procedure may fail
+        raise ValueError("Pure State")
+    if np.isclose(purity(rho2), 1.0):
+        print("rho2 is pure")
     try:
         rho1_sqrt = sl.sqrtm(rho1)
         R = sl.sqrtm(np.dot( rho1_sqrt , np.dot(rho2, rho1_sqrt) ))
@@ -85,3 +97,9 @@ def check_majorisation_of_matrices(A, B):
     ew_A, ev = np.linalg.eig(A)
     ew_B, ev = np.linalg.eig(B)
     return check_majorisation_of_vectors(ew_A, ew_B)
+
+def purity(rho):
+    """Gives the purity of a density matrix. By definition a density matrix has
+    trace 1. The square of a density matrix is 1 iff it is a pure state
+    otherwise it will be below."""
+    return np.trace(np.dot(rho, rho))
