@@ -55,7 +55,9 @@ def concurrency(rho):
     rho_tilde = np.dot(sigma_y_4d, np.dot(rho, sigma_y_4d))
     R = np.dot(rho, rho_tilde)
     ew, ev = np.linalg.eig(R)
-    ew = np.sort(np.sqrt(ew))
+    ew = np.sort(np.sqrt(np.round(ew.real, 3))) # Rounding is a hack to avoid
+    print(ew)
+    # negative allmost zero eigenvalues like -1e-15 in the root
     return np.max([0, ew[3] - ew[0] - ew[1] - ew[2]])
 
 def fidelity(rho1, rho2):
@@ -103,3 +105,6 @@ def purity(rho):
     trace 1. The square of a density matrix is 1 iff it is a pure state
     otherwise it will be below."""
     return np.trace(np.dot(rho, rho))
+
+def partial_trace(rho, dim_a, dim_b, system):
+    pass

@@ -61,6 +61,7 @@ class QuantumInformationFunctionsTestCase(unittest.TestCase):
 
 
     """
+    Need PartialTrace in System B
     def test_locc_theorem(self):
         A = QIF.density_matrix(QIF.phi_p)
         theta = np.linspace(0, 2*np.pi, 100)
