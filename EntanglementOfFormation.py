@@ -2,6 +2,7 @@ import numpy as np
 import scipy.linalg as sl
 from matplotlib import pyplot as plt
 import QuantumInformationFunctions as QIF
+import ClassicalInformationFunctions as CIF
 
 __doc__ = """This Program should compute the entanglement of formation for an
 two-qubit-state, according to

@@ -23,6 +23,12 @@ psi_p = (q01 + q10) / np.sqrt(2)
 phi_m = (q00 - q11) / np.sqrt(2)
 phi_p = (q00 + q11) / np.sqrt(2)
 
+sigma_x = np.array([[0, 1],[1, 0]])
+sigma_y = np.array([[0, -1.j],[1.j, 0]])
+sigma_z = np.array([[1, 0],[0, -1]])
+sigma = np.array([sigma_x, sigma_y, sigma_z])
+Id = np.eye(2)
+
 sigma_y_4d_2 = np.kron(np.array([[0, -1],[1, 0]])*1.j, np.array([[0, -1],[1, 0]])*1.j)
 sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
 
@@ -105,6 +111,21 @@ def purity(rho):
     trace 1. The square of a density matrix is 1 iff it is a pure state
     otherwise it will be below."""
     return np.trace(np.dot(rho, rho))
+
+
+def qbit_from_bloch_sphere(theta, phi):
+    return np.cos(theta/2.0) * q0 + np.exp(1.j * phi) * np.sin(theta/2.0) * q1
+
+def qbit_density_matrix(n):
+    return Id/2.0 + sigma_x * n[0] + sigma_y * n[1] + sigma_z * n[2]
+
+
+def check_density_operator_property_trace(rho):
+    return np.isclose(np.trace(rho), 1)
+
+def check_density_operator_property_hermiticty(rho):
+    return np.array_equal(rho, np.transpose(rho).conjugate())
+
 
 def partial_trace(rho, dim_a, dim_b, system):
     pass

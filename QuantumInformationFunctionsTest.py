@@ -58,6 +58,20 @@ class QuantumInformationFunctionsTestCase(unittest.TestCase):
         self.assertNotEqual( QIF.purity(rho2) , 1.0)
         self.assertNotEqual( QIF.purity(totally_mixed) , 1.0)
 
+    def test_qbit_from_bloch_sphere(self):
+        theta = np.linspace(0, np.pi/2, 100)
+        for t in theta:
+            self.assertAlmostEqual(
+                np.dot(     QIF.qbit_from_bloch_sphere(t, 0),
+                            QIF.qbit_from_bloch_sphere(t, np.pi)),
+                np.cos(t))
+
+    def test_qbit_density_matrix(self):
+        rho = QIF.qbit_density_matrix(np.array([1/np.sqrt(2), 1/2, 1/2]))
+        self.assertTrue(QIF.check_density_operator_property_trace(rho))
+        self.assertTrue(QIF.check_density_operator_property_hermiticty(rho))
+
+
 
 
     """
