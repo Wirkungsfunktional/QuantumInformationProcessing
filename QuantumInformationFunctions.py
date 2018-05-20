@@ -3,6 +3,14 @@ import scipy.linalg as sl
 from matplotlib import pyplot as plt
 
 
+__doc__ = """ Collection of functions releated to Quantum Information Theory.
+The implementation is only for learning purpose, there is no focus on
+performance and optimaization.
+
+
+"""
+
+
 #TODO: Partial trace
 #TODO: Partial transpose
 #TODO: Matrix tensor product
@@ -29,8 +37,23 @@ sigma_z = np.array([[1, 0],[0, -1]])
 sigma = np.array([sigma_x, sigma_y, sigma_z])
 Id = np.eye(2)
 
+
+
 sigma_y_4d_2 = np.kron(np.array([[0, -1],[1, 0]])*1.j, np.array([[0, -1],[1, 0]])*1.j)
 sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
+
+def make_random_2qubit_density_matrix():
+    a = np.random.rand(3)
+    b = np.random.rand(3)
+    c = np.random.rand(3, 3)
+    s = np.dot(a, a) + np.dot(b, b) + np.sum(c**2)
+    d = np.zeros((4, 4)) + 0.j
+
+    for i in range(3):
+        d += a[i]*np.kron(sigma[i], Id) + b[i]*np.kron(Id, sigma[i])
+        for j in range(3):
+            d += c[i][j]*np.kron(sigma[i], sigma[j])
+    return d/4.0 * np.sqrt(3.0*np.random.rand()/s) + np.eye(4)/4.0
 
 
 # Computational Functions
@@ -62,7 +85,6 @@ def concurrency(rho):
     R = np.dot(rho, rho_tilde)
     ew, ev = np.linalg.eig(R)
     ew = np.sort(np.sqrt(np.round(ew.real, 3))) # Rounding is a hack to avoid
-    print(ew)
     # negative allmost zero eigenvalues like -1e-15 in the root
     return np.max([0, ew[3] - ew[0] - ew[1] - ew[2]])
 
@@ -78,7 +100,7 @@ def fidelity(rho1, rho2):
         print("rho2 is pure")
     try:
         rho1_sqrt = sl.sqrtm(rho1)
-        R = sl.sqrtm(np.dot( rho1_sqrt , np.dot(rho2, rho1_sqrt) ))
+        R = matrix_root(np.dot( rho1_sqrt , np.dot(rho2, rho1_sqrt) ))
     except:
         print("Computation failed, return 0 as fidelity.")
         return 0
@@ -129,3 +151,18 @@ def check_density_operator_property_hermiticty(rho):
 
 def partial_trace(rho, dim_a, dim_b, system):
     pass
+
+def kolmogorov_distance(rho1, rho2):
+    ew, ev = np.linalg.eig(rho1 - rho2)
+    return np.sum(np.abs(ew))/2.0
+
+def trace_norm(A):
+    return np.trace(matrix_root(np.dot(np.transpose(A.conjugate()), A)))
+
+def matrix_root(m):
+    """Return the root of a matrix. Due to the fact that the used function:
+    scipy.linalg.sqrtm diagonal matrices as singular classify and therefore is
+    unusable, there is a check of diagonal."""
+    if np.count_nonzero(np.round(m - np.diag(m))) == 0: # check for diagonal
+        return np.sqrt(m)
+    return sl.sqrtm(m)

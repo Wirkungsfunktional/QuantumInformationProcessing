@@ -24,6 +24,9 @@ def ensemble_of_prob_exp(ensemble_size, func):
     return np.array(experiment_outcome)
 
 def probability_for_experiment(number_of_experiments, func):
+    """Preform the func number_of_experiments times. count the number of each
+    distinct outcome and return the list of unique outcome and its probability
+    as separate arrays."""
     data, counts = np.unique(   ensemble_of_prob_exp(
                     number_of_experiments,
                     func), return_counts=True)

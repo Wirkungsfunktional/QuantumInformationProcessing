@@ -71,7 +71,12 @@ class QuantumInformationFunctionsTestCase(unittest.TestCase):
         self.assertTrue(QIF.check_density_operator_property_trace(rho))
         self.assertTrue(QIF.check_density_operator_property_hermiticty(rho))
 
+    def test_distance_function(self):
+        rho1 = QIF.density_matrix(QIF.phi_m)
+        rho2 = QIF.density_matrix(QIF.q11)
 
+        self.assertAlmostEqual( QIF.kolmogorov_distance(rho1, rho2),
+                                QIF.trace_norm(rho1 - rho2)/2.0)
 
 
     """

@@ -12,3 +12,13 @@ def classical_entropy(p):
     #p = p[np.nonzero(p)] # avoid the limit 0 * log{1 / 0}
     #return np.dot(p, np.log2(1/p))
     return sst.entropy(p, base=2)
+
+
+def mutual_information():
+    pass
+
+def markov_entropy():
+    pass
+
+def kullback_leibler_distance(p, q):
+    return sst.entropy(p, q, base=2)

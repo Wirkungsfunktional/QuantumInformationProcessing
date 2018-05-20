@@ -34,8 +34,8 @@ def plot_entanglement():
     conc = np.zeros(n)
     dist = np.zeros(n)
     for i, pp in enumerate(p):
-        w = QIF.werner_state(pp, QIF.psi_m)
-        dist[i] = QIF.fidelity(w, np.dot(QIF.sigma_y_4d, np.dot(w, QIF.sigma_y_4d)))
+        w = pp*QIF.density_matrix(QIF.phi_p) + (1 - pp)*QIF.density_matrix(QIF.q00) #QIF.werner_state(pp, QIF.psi_m)
+        #dist[i] = QIF.fidelity(w, np.dot(QIF.sigma_y_4d, np.dot(w, QIF.sigma_y_4d)))
         conc[i] = QIF.concurrency(w)
         entanglement[i] = QIF.entanglement_2qbit(conc[i])
 
@@ -71,9 +71,27 @@ def copy_entanglement():
     plt.legend()
     plt.show()
 
+def ensemble_test():
+    e = []
+    pur = []
+    for i in range(5000):
+        rho = QIF.make_random_2qubit_density_matrix()
+        conc = QIF.concurrency(rho)
+        if not np.isnan(conc):
+            pur.append(QIF.purity(rho).real)
+            e.append(QIF.entanglement_2qbit(conc))
+    e = np.array(e)
+    notentangled = len(e) - np.count_nonzero(e)
+    entangled = np.count_nonzero(e)
+    n = len(e)
+    print(notentangled/n)
+    print(entangled/n)
+    plt.hist(pur)
+    plt.show()
 
 
 if __name__ == '__main__':
     print(__doc__)
     #plot_entanglement()
-    copy_entanglement()
+    ensemble_test()
+    #copy_entanglement()
