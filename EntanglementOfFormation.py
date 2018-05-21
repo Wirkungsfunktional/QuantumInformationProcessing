@@ -71,21 +71,25 @@ def copy_entanglement():
     plt.legend()
     plt.show()
 
+
+
+
 def ensemble_test():
     e = []
     pur = []
-    for i in range(5000):
-        rho = QIF.make_random_2qubit_density_matrix()
+    rho_check = np.zeros( (4, 4) ) + 0.j
+    for rho in QIF.create_2qubit_random_density_matrix_ensemble(10000):
+        rho_check += rho
         conc = QIF.concurrency(rho)
-        if not np.isnan(conc):
-            pur.append(QIF.purity(rho).real)
-            e.append(QIF.entanglement_2qbit(conc))
+        pur.append(QIF.purity(rho).real)
+        e.append(QIF.entanglement_2qbit(conc))
     e = np.array(e)
     notentangled = len(e) - np.count_nonzero(e)
     entangled = np.count_nonzero(e)
     n = len(e)
     print(notentangled/n)
     print(entangled/n)
+    print(rho_check/n)
     plt.hist(pur)
     plt.show()
 

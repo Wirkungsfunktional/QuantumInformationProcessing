@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.linalg as sl
 from matplotlib import pyplot as plt
+from typing import List
 
 
 __doc__ = """ Collection of functions releated to Quantum Information Theory.
@@ -39,10 +40,32 @@ Id = np.eye(2)
 
 
 
-sigma_y_4d_2 = np.kron(np.array([[0, -1],[1, 0]])*1.j, np.array([[0, -1],[1, 0]])*1.j)
 sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
 
-def make_random_2qubit_density_matrix():
+
+def create_2qubit_random_density_matrix_ensemble(N: int) -> List[np.ndarray]:
+    """Create a List of Matrices. The check for positiv definitnes is done by
+    using the existence of a cholesky decomposition. Better would be a check of
+    the positivity of all minors of the matrix to have positiv semi definit
+    check. The random ensemble is not uniform with respect to purity. Impure
+    states are prefered."""
+    ensemble = []
+    n = 0
+    while n < N:
+        rho = make_random_2qubit_density_matrix()
+        if check_density_operator_property_hermiticty(rho):
+            try:
+                np.linalg.cholesky(rho)
+                ensemble.append(rho)
+                n += 1
+            except np.linalg.LinAlgError:
+                pass
+    return ensemble
+
+
+def make_random_2qubit_density_matrix() -> np.ndarray:
+    """Creates a 4 dimmensional density matrix by using the Hilbert - Schmidt
+    representation. The matrix can be pure or impure."""
     a = np.random.rand(3)
     b = np.random.rand(3)
     c = np.random.rand(3, 3)
@@ -57,7 +80,7 @@ def make_random_2qubit_density_matrix():
 
 
 # Computational Functions
-def shannon_1bit(x):
+def shannon_1bit(x: np.ndarray) -> np.ndarray:
     """Compute the classical entropy of the bit system, that '0' occure with
     probability x and '1' with (1 - x). It is zero at x = 0 or x = 1 and maximal
     at x = 0.5 which means 1."""
@@ -65,21 +88,21 @@ def shannon_1bit(x):
         return 0 # The computation by formular will fail due to the limit case
     return -x * np.log2(x) - (1-x) * np.log2(1 - x)
 
-def entanglement_2qbit(c):
+def entanglement_2qbit(c: np.ndarray) -> np.ndarray:
     """Compute the Entanglement of Formation according to Woot1998 of an 2-Qubit
     State. It takes the Concurrency (@see concurrency(rho) ) as input."""
     return shannon_1bit( (1 + np.sqrt(1 - c**2) )/2.0 )
 
-def density_matrix(state):
+def density_matrix(state: np.ndarray) -> np.ndarray:
     """Compute the outer product of $\ket{state}\bra{state}$ of an Vector state."""
     return np.outer(state, state)
 
-def werner_state(p, state):
+def werner_state(p: float, state: np.ndarray) -> np.ndarray:
     """Compute the werner state, which is the superposition of an entangled
     state (state) and the totally mixed state, which is the Identity operator."""
     return p*density_matrix(state) + (1 - p)*np.eye(4)/4.0
 
-def concurrency(rho):
+def concurrency(rho: np.ndarray) -> float:
     """Compute the Concurrency of a desity matrix according to Woot1998."""
     rho_tilde = np.dot(sigma_y_4d, np.dot(rho, sigma_y_4d))
     R = np.dot(rho, rho_tilde)
@@ -88,7 +111,7 @@ def concurrency(rho):
     # negative allmost zero eigenvalues like -1e-15 in the root
     return np.max([0, ew[3] - ew[0] - ew[1] - ew[2]])
 
-def fidelity(rho1, rho2):
+def fidelity(rho1: np.ndarray, rho2: np.ndarray) -> float:
     """Compute the Fidelity of two desity operators. The Fidelity is a measure,
     how far apart two matrices are. Here the square of the Trace will be
     returned. Sometimes the root of this is called by fidelity."""
@@ -106,7 +129,7 @@ def fidelity(rho1, rho2):
         return 0
     return np.trace(R)**2
 
-def check_majorisation_of_vectors(x, y):
+def check_majorisation_of_vectors(x: np.ndarray, y: np.ndarray) -> bool:
     """Check whether x ~ y: \sum^d x_i <= \sum^d y_i for x_i, y_i descending
     ordered for all d."""
     assert len(x) == len(y), "Not equal length."
@@ -121,31 +144,36 @@ def check_majorisation_of_vectors(x, y):
         ret = (ret and (sx <= sy))
     return ret
 
-def check_majorisation_of_matrices(A, B):
+def check_majorisation_of_matrices(A: np.ndarray, B: np.ndarray) -> bool:
     """Check whether A ~ B, defined by \Lambda(A) ~ \Lambda(B), with \Lambda(X)
     the vector of all eigenvalues of X."""
     ew_A, ev = np.linalg.eig(A)
     ew_B, ev = np.linalg.eig(B)
     return check_majorisation_of_vectors(ew_A, ew_B)
 
-def purity(rho):
+def purity(rho: np.ndarray) -> float:
     """Gives the purity of a density matrix. By definition a density matrix has
     trace 1. The square of a density matrix is 1 iff it is a pure state
     otherwise it will be below."""
     return np.trace(np.dot(rho, rho))
 
 
-def qbit_from_bloch_sphere(theta, phi):
+def qbit_from_bloch_sphere(theta: float, phi: float) -> np.ndarray:
     return np.cos(theta/2.0) * q0 + np.exp(1.j * phi) * np.sin(theta/2.0) * q1
 
-def qbit_density_matrix(n):
+def qbit_density_matrix(n: np.ndarray):
+    """Creates a matrix in Hilbert-Schmidt representation. There will be no
+    check for the Trace-, Hermiticity- and Positivity property"""
     return Id/2.0 + sigma_x * n[0] + sigma_y * n[1] + sigma_z * n[2]
 
 
-def check_density_operator_property_trace(rho):
+def check_density_operator_property_trace(rho: np.ndarray) -> bool:
+    """Check that the trace of the density matrix is 1."""
     return np.isclose(np.trace(rho), 1)
 
-def check_density_operator_property_hermiticty(rho):
+def check_density_operator_property_hermiticty(rho: np.ndarray) -> bool:
+    """Check that the density matrix is hermitian. This means equal to its
+    transposed and complex conjugated."""
     return np.array_equal(rho, np.transpose(rho).conjugate())
 
 
