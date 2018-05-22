@@ -78,7 +78,7 @@ def ensemble_test():
     e = []
     pur = []
     rho_check = np.zeros( (4, 4) ) + 0.j
-    for rho in QIF.create_2qubit_random_density_matrix_ensemble(10000):
+    for rho in QIF.create_2qubit_random_density_matrix_ensemble(2000):
         rho_check += rho
         conc = QIF.concurrency(rho)
         pur.append(QIF.purity(rho).real)
@@ -90,8 +90,24 @@ def ensemble_test():
     print(notentangled/n)
     print(entangled/n)
     print(rho_check/n)
-    plt.hist(pur)
+    plt.hist(pur, bins=np.linspace(0.25, 1, 100))
     plt.show()
+
+
+def test_positivity():
+    for i in range(1000):
+        m = QIF.make_random_2qubit_density_matrix()
+        b = QIF.check_minor_of_matrix(m)
+        print(b)
+        try:
+            np.linalg.cholesky(m)
+            if not b:
+                print("fail")
+        except np.linalg.LinAlgError:
+            if b:
+                print("fail")
+    print("success")
+
 
 
 if __name__ == '__main__':
@@ -99,3 +115,4 @@ if __name__ == '__main__':
     #plot_entanglement()
     ensemble_test()
     #copy_entanglement()
+    #test_positivity()

@@ -62,21 +62,35 @@ def create_2qubit_random_density_matrix_ensemble(N: int) -> List[np.ndarray]:
                 pass
     return ensemble
 
+def check_minor_of_matrix(m):
+    test_flag = (np.linalg.det(m) >= 0)
+    for i in range(len(m)):
+        h = np.concatenate( (m[:i], m[i+1:]) )
+        h = np.concatenate( (h[:,:i], h[:,i+1:]), axis=1)
+        if len(h) != 0:
+            test_flag = test_flag and check_minor_of_matrix(h)
+    return test_flag
+
+
+
 
 def make_random_2qubit_density_matrix() -> np.ndarray:
     """Creates a 4 dimmensional density matrix by using the Hilbert - Schmidt
-    representation. The matrix can be pure or impure."""
-    a = np.random.rand(3)
-    b = np.random.rand(3)
-    c = np.random.rand(3, 3)
-    s = np.dot(a, a) + np.dot(b, b) + np.sum(c**2)
+    representation. The matrix can be pure or impure. Better to produce on
+    vector with norm condition."""
+    n = 20
+    r = np.random.normal(scale=1.0, size=(15)) #*np.random.rand()
+    r = r / np.dot(r, r)**0.5 * (3/16)**0.5 * np.random.rand()
+    a = r[:3]#np.random.rand(3)*n - int(n/2)
+    b = r[3:6]#np.random.rand(3)*n - int(n/2)
+    c = r[6:].reshape( (3, 3) )#np.random.rand(3, 3)*n - int(n/2)
     d = np.zeros((4, 4)) + 0.j
 
     for i in range(3):
         d += a[i]*np.kron(sigma[i], Id) + b[i]*np.kron(Id, sigma[i])
         for j in range(3):
             d += c[i][j]*np.kron(sigma[i], sigma[j])
-    return d/4.0 * np.sqrt(3.0*np.random.rand()/s) + np.eye(4)/4.0
+    return d + np.eye(4)/4.0
 
 
 # Computational Functions
