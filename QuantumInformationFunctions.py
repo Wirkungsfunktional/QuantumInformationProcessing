@@ -63,7 +63,7 @@ def create_2qubit_random_density_matrix_ensemble(N: int) -> List[np.ndarray]:
     return ensemble
 
 def check_minor_of_matrix(m):
-    test_flag = (np.linalg.det(m) >= 0)
+    test_flag = np.isclose( np.linalg.det(m),  0.0)
     for i in range(len(m)):
         h = np.concatenate( (m[:i], m[i+1:]) )
         h = np.concatenate( (h[:,:i], h[:,i+1:]), axis=1)

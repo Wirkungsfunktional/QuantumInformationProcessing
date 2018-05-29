@@ -33,6 +33,8 @@ def plot_entanglement():
     entanglement = np.zeros(n)
     conc = np.zeros(n)
     dist = np.zeros(n)
+    m = 0.5*QIF.density_matrix(QIF.phi_p) + 0.5*QIF.density_matrix(QIF.q00)
+    print(np.linalg.eig(np.dot(m, np.dot( QIF.sigma_y_4d,np.dot(m , QIF.sigma_y_4d) ))))
     for i, pp in enumerate(p):
         w = pp*QIF.density_matrix(QIF.phi_p) + (1 - pp)*QIF.density_matrix(QIF.q00) #QIF.werner_state(pp, QIF.psi_m)
         #dist[i] = QIF.fidelity(w, np.dot(QIF.sigma_y_4d, np.dot(w, QIF.sigma_y_4d)))
@@ -72,13 +74,14 @@ def copy_entanglement():
     plt.show()
 
 
-
+def A15(x):
+    return 1/(5*x)
 
 def ensemble_test():
     e = []
     pur = []
     rho_check = np.zeros( (4, 4) ) + 0.j
-    for rho in QIF.create_2qubit_random_density_matrix_ensemble(2000):
+    for rho in QIF.create_2qubit_random_density_matrix_ensemble(20000):
         rho_check += rho
         conc = QIF.concurrency(rho)
         pur.append(QIF.purity(rho).real)
@@ -90,28 +93,52 @@ def ensemble_test():
     print(notentangled/n)
     print(entangled/n)
     print(rho_check/n)
-    plt.hist(pur, bins=np.linspace(0.25, 1, 100))
+    plt.hist(pur, normed=True)#, bins=np.linspace(0.25, 1, 100))
+    p = np.linspace(0.25, 1, 100)
+    plt.plot(p, A15(p))
     plt.show()
 
 
-def test_positivity():
-    for i in range(1000):
-        m = QIF.make_random_2qubit_density_matrix()
-        b = QIF.check_minor_of_matrix(m)
-        print(b)
-        try:
-            np.linalg.cholesky(m)
-            if not b:
-                print("fail")
-        except np.linalg.LinAlgError:
-            if b:
-                print("fail")
-    print("success")
+
+
+
+def POVM_measurement():
+    alpha = 1 * np.pi / 8
+    u = np.array([np.cos(alpha), np.sin(alpha)])
+    v = np.dot(QIF.sigma_x, u)
+    rho = (QIF.density_matrix(u) + QIF.density_matrix(v))/2.0
+    n = 1000
+    x = np.linspace(0, 1, n)
+    E_dk_expec = np.zeros(n)
+    E_nu_expec = np.zeros(n)
+    E_nv_expec = np.zeros(n)
+
+    for i, xx in enumerate(x):
+        E_dk = (1 - 2*xx)*np.eye(2) + xx*(QIF.density_matrix(u) + QIF.density_matrix(v))
+        E_nu = xx*(np.eye(2) - QIF.density_matrix(u))
+        E_nv = xx*(np.eye(2) - QIF.density_matrix(v))
+
+        if np.linalg.det(E_dk) > 0:
+            E_dk_expec[i] = np.trace(np.dot(rho, E_dk))
+        if  QIF.check_minor_of_matrix(E_nu):
+            E_nu_expec[i] = np.trace(np.dot(rho, E_nu))
+        if QIF.check_minor_of_matrix(E_nv):
+            E_nv_expec[i] = np.trace(np.dot(rho, E_nv))
+
+    plt.plot(x, 1 - x*np.cos(2*alpha)**2, label="theorie")
+    plt.plot(x, E_dk_expec, label="E_dk")
+    plt.plot(x, E_nu_expec, label="E_nu")
+    plt.plot(x, E_nv_expec, label="E_nv")
+    plt.plot([1/(1 + np.sin(2*alpha))], [np.sin(2*alpha)], 'o')
+    plt.legend()
+    plt.show()
+
 
 
 
 if __name__ == '__main__':
     print(__doc__)
+    #POVM_measurement()
     #plot_entanglement()
     ensemble_test()
     #copy_entanglement()
