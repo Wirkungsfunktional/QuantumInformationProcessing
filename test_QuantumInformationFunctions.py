@@ -78,16 +78,14 @@ class QuantumInformationFunctionsTestCase(unittest.TestCase):
         self.assertAlmostEqual( QIF.kolmogorov_distance(rho1, rho2),
                                 QIF.trace_norm(rho1 - rho2)/2.0)
 
+    def test_partial_trace(self):
+        rho = np.array([    [1, 2, 3, 4],
+                            [2, 6, 7, 8],
+                            [3, 7, 11, 12],
+                            [4, 8, 12, 16]])
+        rho_erg = np.array( [   [7, 11],
+                                [11, 27]] )
+        self.assertTrue(np.array_equal(QIF.partial_trace(rho), rho_erg))
 
-    """
-    Need PartialTrace in System B
-    def test_locc_theorem(self):
-        A = QIF.density_matrix(QIF.phi_p)
-        theta = np.linspace(0, 2*np.pi, 100)
-        for i, t in enumerate(theta):
-            psi_end = np.cos(t) * QIF.q11 + np.sin(t) * QIF.q00
-            B = QIF.density_matrix(psi_end)
-            self.assertTrue( QIF.check_majorisation_of_matrices(A, B) )
-    """
 
 unittest.main()

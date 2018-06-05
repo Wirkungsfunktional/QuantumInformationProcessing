@@ -33,15 +33,17 @@ def plot_entanglement():
     entanglement = np.zeros(n)
     conc = np.zeros(n)
     dist = np.zeros(n)
+    pur = np.zeros(n)
     m = 0.5*QIF.density_matrix(QIF.phi_p) + 0.5*QIF.density_matrix(QIF.q00)
     print(np.linalg.eig(np.dot(m, np.dot( QIF.sigma_y_4d,np.dot(m , QIF.sigma_y_4d) ))))
     for i, pp in enumerate(p):
         w = pp*QIF.density_matrix(QIF.phi_p) + (1 - pp)*QIF.density_matrix(QIF.q00) #QIF.werner_state(pp, QIF.psi_m)
         #dist[i] = QIF.fidelity(w, np.dot(QIF.sigma_y_4d, np.dot(w, QIF.sigma_y_4d)))
+        pur[i] = QIF.purity(w)
         conc[i] = QIF.concurrency(w)
         entanglement[i] = QIF.entanglement_2qbit(conc[i])
 
-    plt.plot(p, dist, label='Fidelity of rho and rho_tilde')
+    plt.plot(p, pur, label='purity')
     plt.plot(p, entanglement, label="Entanglement of Formation")
     plt.plot(p, conc, label="Concurrency")
     plt.xlabel("p")
@@ -74,32 +76,16 @@ def copy_entanglement():
     plt.show()
 
 
-def A15(x):
-    return 1/(5*x)
-
-def ensemble_test():
-    e = []
-    pur = []
-    rho_check = np.zeros( (4, 4) ) + 0.j
-    for rho in QIF.create_2qubit_random_density_matrix_ensemble(20000):
-        rho_check += rho
-        conc = QIF.concurrency(rho)
-        pur.append(QIF.purity(rho).real)
-        e.append(QIF.entanglement_2qbit(conc))
-    e = np.array(e)
-    notentangled = len(e) - np.count_nonzero(e)
-    entangled = np.count_nonzero(e)
-    n = len(e)
-    print(notentangled/n)
-    print(entangled/n)
-    print(rho_check/n)
-    plt.hist(pur, normed=True)#, bins=np.linspace(0.25, 1, 100))
-    p = np.linspace(0.25, 1, 100)
-    plt.plot(p, A15(p))
-    plt.show()
 
 
 
+def distance_ent_sep():
+    p1 = 0.2
+    p2 = 0.7
+    w_ent = p2*QIF.density_matrix(QIF.psi_m) + (1 - p2)*np.eye(4)/4.0
+    w_sep = p1*QIF.density_matrix(QIF.psi_m) + (1 - p1)*np.eye(4)/4.0
+    # perform locc on w_ent to determine the lowest distance?
+    print(QIF.kolmogorov_distance(w_ent, w_sep))
 
 
 def POVM_measurement():
@@ -138,8 +124,8 @@ def POVM_measurement():
 
 if __name__ == '__main__':
     print(__doc__)
+    #distance_ent_sep()
     #POVM_measurement()
-    #plot_entanglement()
-    ensemble_test()
+    plot_entanglement()
     #copy_entanglement()
     #test_positivity()

@@ -3,7 +3,6 @@ import scipy.linalg as sl
 from matplotlib import pyplot as plt
 from typing import List
 
-
 __doc__ = """ Collection of functions releated to Quantum Information Theory.
 The implementation is only for learning purpose, there is no focus on
 performance and optimaization.
@@ -42,8 +41,59 @@ Id = np.eye(2)
 
 sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
 
+def random_unitary(n):
+    H = np.random.randn(n, n)
+    Q, R = sl.qr(H)
+    return Q
 
-def create_2qubit_random_density_matrix_ensemble(N: int) -> List[np.ndarray]:
+def make_pure_random_4qbit():
+    rho = np.zeros( (16, 16) ) + 0.j
+    rho[0][0] = 1
+    U = np.kron(np.kron(np.kron(random_unitary(2), random_unitary(2)),random_unitary(2)), random_unitary(2))
+    rho = np.dot(U, np.dot(rho, np.conjugate(np.transpose(U))))
+    return rho
+
+def partial_trace(rho_ab):
+    size_a, size_b = rho_ab.shape
+    assert size_b % 4 == 0, "not 4 * N size of Matrix"
+    n = int(size_b / 2)
+    n2 = int(n/2)
+    rho_a = np.zeros( (n, n) ) + 0.j
+    rho_a[:n2,:n2] = rho_ab[0:n2,0:n2] + rho_ab[n2:2*n2,n2:2*n2]
+    rho_a[:n2,n2:] = rho_ab[2*n2:3*n2,0:n2] + rho_ab[3*n2:,n2:2*n2]
+    rho_a[n2:,:n2] = np.conjugate(rho_a[:n2,n2:])
+    rho_a[n2:,n2:] = rho_ab[2*n2:3*n2,2*n2:3*n2] + rho_ab[3*n2:,3*n2:]
+    return rho_a
+
+def create_2qubit_random_density_matrix_ensemble(pur_end, N: int) -> List[np.ndarray]:
+    """Create a List of Matrices. The check for positiv definitnes is done by
+    using the existence of a cholesky decomposition. Better would be a check of
+    the positivity of all minors of the matrix to have positiv semi definit
+    check. The random ensemble is not uniform with respect to purity. Impure
+    states are prefered."""
+    ensemble = []
+    n = 0
+    p = np.linspace(0, pur_end, N)**0.5
+    while n < N:
+        rho = make_random_2qubit_density_matrix(p[n])
+        if check_density_operator_property_hermiticty(rho):
+            if check_density_operator_property_positiv(rho):
+                print(n)
+                ensemble.append(rho)
+                n += 1
+    return ensemble
+
+def check_minor_of_matrix(m):
+    d = np.linalg.det(m)
+    test_flag = np.isclose( d,  0.0) or d > 0.0
+    for i in range(len(m)):
+        h = np.concatenate( (m[:i], m[i+1:]) )
+        h = np.concatenate( (h[:,:i], h[:,i+1:]), axis=1)
+        if (len(h) != 0) and test_flag:
+            test_flag = test_flag and check_minor_of_matrix(h)
+    return test_flag
+
+def create_2qubit_random_density_matrix_ensemble_by_pratial_trace(pur_end, N: int) -> List[np.ndarray]:
     """Create a List of Matrices. The check for positiv definitnes is done by
     using the existence of a cholesky decomposition. Better would be a check of
     the positivity of all minors of the matrix to have positiv semi definit
@@ -52,35 +102,57 @@ def create_2qubit_random_density_matrix_ensemble(N: int) -> List[np.ndarray]:
     ensemble = []
     n = 0
     while n < N:
-        rho = make_random_2qubit_density_matrix()
-        if check_density_operator_property_hermiticty(rho):
-            try:
-                np.linalg.cholesky(rho)
-                ensemble.append(rho)
+        rho = make_pure_random_4qbit()
+        if True: #purity(rho) <= 1.0:
+            if True: #check_density_operator_property_positiv(rho):
+                print(n)
+                m = partial_trace(rho)
+                m1 = partial_trace(m)
+                ensemble.append(m1)
                 n += 1
-            except np.linalg.LinAlgError:
-                pass
     return ensemble
 
-def check_minor_of_matrix(m):
-    test_flag = np.isclose( np.linalg.det(m),  0.0)
-    for i in range(len(m)):
-        h = np.concatenate( (m[:i], m[i+1:]) )
-        h = np.concatenate( (h[:,:i], h[:,i+1:]), axis=1)
-        if len(h) != 0:
-            test_flag = test_flag and check_minor_of_matrix(h)
-    return test_flag
-
-
-
-
-def make_random_2qubit_density_matrix() -> np.ndarray:
+def make_random_4qubit_density_matrix() -> np.ndarray:
     """Creates a 4 dimmensional density matrix by using the Hilbert - Schmidt
     representation. The matrix can be pure or impure. Better to produce on
     vector with norm condition."""
     n = 20
-    r = np.random.normal(scale=1.0, size=(15)) #*np.random.rand()
-    r = r / np.dot(r, r)**0.5 * (3/16)**0.5 * np.random.rand()
+    r = np.random.normal(scale=1.0, size=(93)) #*np.random.rand()
+    r = r / np.dot(r, r)**0.5 * 0.24205 # np.random.rand() * 0.25 # * p
+    a = r[:3]#np.random.rand(3)*n - int(n/2)
+    b = r[3:6]#np.random.rand(3)*n - int(n/2)
+    c = r[6:9]
+    d = r[9:12]
+    m = r[12:].reshape( (3, 3, 3, 3) )#np.random.rand(3, 3)*n - int(n/2)
+    rho = np.zeros((16, 16)) + 0.j
+
+    for i in range(3):
+        rho += a[i]*np.kron(np.kron(np.kron(sigma[i], Id), Id), Id)
+        rho += b[i]*np.kron(np.kron(np.kron(Id, sigma[i]), Id), Id)
+        rho += c[i]*np.kron(np.kron(np.kron(Id, Id), sigma[i]), Id)
+        rho += d[i]*np.kron(np.kron(np.kron(Id, Id), Id), sigma[i])
+        for j in range(3):
+            for k in range(3):
+                for l in range(3):
+                    rho += m[i][j][k][l]*np.kron(np.kron(np.kron(sigma[i], sigma[j]), sigma[k]), sigma[l])
+    rho += np.eye(16)/16.0
+    print(purity(rho))
+    #print(check_density_operator_property_trace(rho))
+    #print(check_density_operator_property_hermiticty(rho))
+    #print(purity(rho))
+    print(check_density_operator_property_positiv(rho))
+    return rho
+
+
+
+
+def make_random_2qubit_density_matrix(p) -> np.ndarray:
+    """Creates a 4 dimmensional density matrix by using the Hilbert - Schmidt
+    representation. The matrix can be pure or impure. Better to produce on
+    vector with norm condition."""
+    n = 20
+    r = np.random.rand(15)*n - n/2 # np.random.normal(scale=1.0, size=(15)) #*np.random.rand()
+    r = r / np.dot(r, r)**0.5 * (3/16)**0.5 * p
     a = r[:3]#np.random.rand(3)*n - int(n/2)
     b = r[3:6]#np.random.rand(3)*n - int(n/2)
     c = r[6:].reshape( (3, 3) )#np.random.rand(3, 3)*n - int(n/2)
@@ -190,9 +262,13 @@ def check_density_operator_property_hermiticty(rho: np.ndarray) -> bool:
     transposed and complex conjugated."""
     return np.array_equal(rho, np.transpose(rho).conjugate())
 
+def check_density_operator_property_positiv(rho):
+    try:
+        np.linalg.cholesky(rho)
+        return True
+    except:
+        return False
 
-def partial_trace(rho, dim_a, dim_b, system):
-    pass
 
 def kolmogorov_distance(rho1, rho2):
     ew, ev = np.linalg.eig(rho1 - rho2)
