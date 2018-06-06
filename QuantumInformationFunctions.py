@@ -10,10 +10,7 @@ performance and optimaization.
 
 """
 
-
-#TODO: Partial trace
 #TODO: Partial transpose
-#TODO: Matrix tensor product
 
 
 
@@ -53,7 +50,38 @@ def make_pure_random_4qbit():
     rho = np.dot(U, np.dot(rho, np.conjugate(np.transpose(U))))
     return rho
 
+def get_index_in_computational_basis(binary_number_string):
+    number_string = "0b" + binary_number_string[::-1]
+    return int(number_string, 2)
+
+def make_computational_basis_index(int_number, size):
+    return ('{0:0' + str(size) + 'b}').format(int_number)[::-1]
+
 def partial_trace(rho_ab):
+    size_a, size_b = rho_ab.shape
+    assert size_b == size_a, "matrix not symmetric"
+    number_of_systems = int(np.log2(size_a))
+    reduced_size = 2**(number_of_systems - 1)
+    rho_red = np.zeros( (reduced_size, reduced_size) ) + 0.j
+    for i in range(size_a):
+        for j in range(size_a):
+            bin_string_1 = make_computational_basis_index(i, number_of_systems)
+            bin_string_2 = make_computational_basis_index(j, number_of_systems)
+            if (bin_string_1[0] == bin_string_2[0]):
+                rho_red [get_index_in_computational_basis(bin_string_1[1:])] \
+                        [get_index_in_computational_basis(bin_string_2[1:])] += \
+                    rho_ab[get_index_in_computational_basis(bin_string_1)] \
+                        [get_index_in_computational_basis(bin_string_2)]
+    return rho_red
+
+
+
+
+
+
+
+
+def partial_trace2(rho_ab):
     size_a, size_b = rho_ab.shape
     assert size_b % 4 == 0, "not 4 * N size of Matrix"
     n = int(size_b / 2)
@@ -111,6 +139,17 @@ def create_2qubit_random_density_matrix_ensemble_by_pratial_trace(pur_end, N: in
                 ensemble.append(m1)
                 n += 1
     return ensemble
+
+def make_random_1make_random_density_matrix(p):
+    n = 20
+    r = np.random.rand(3)*n - n/2 # np.random.normal(scale=1.0, size=(15)) #*np.random.rand()
+    r = r / np.dot(r, r)**0.5 * p * np.random.rand()
+    d = np.zeros((2, 2)) + 0.j
+
+    for i in range(3):
+        d += r[i]*sigma[i]/2.0
+    return d + np.eye(2)/2.0
+
 
 def make_random_4qubit_density_matrix() -> np.ndarray:
     """Creates a 4 dimmensional density matrix by using the Hilbert - Schmidt
@@ -186,7 +225,7 @@ def density_matrix(state: np.ndarray) -> np.ndarray:
 def werner_state(p: float, state: np.ndarray) -> np.ndarray:
     """Compute the werner state, which is the superposition of an entangled
     state (state) and the totally mixed state, which is the Identity operator."""
-    return p*density_matrix(state) + (1 - p)*np.eye(4)/4.0
+    return p*density_matrix(state) + (1 - p)*np.eye(4)/4.0 + 0.j
 
 def concurrency(rho: np.ndarray) -> float:
     """Compute the Concurrency of a desity matrix according to Woot1998."""
@@ -214,6 +253,10 @@ def fidelity(rho1: np.ndarray, rho2: np.ndarray) -> float:
         print("Computation failed, return 0 as fidelity.")
         return 0
     return np.trace(R)**2
+
+def fidelity_qubit(rho1, rho2):
+    return np.trace(np.dot(rho1, rho2)) + 2 * np.sqrt(np.linalg.det(rho1) * np.linalg.det(rho2))
+
 
 def check_majorisation_of_vectors(x: np.ndarray, y: np.ndarray) -> bool:
     """Check whether x ~ y: \sum^d x_i <= \sum^d y_i for x_i, y_i descending
@@ -269,6 +312,11 @@ def check_density_operator_property_positiv(rho):
     except:
         return False
 
+def check_density_operator(rho):
+    flag = check_density_operator_property_trace(rho)
+    flag = (flag and check_density_operator_property_hermiticty(rho))
+    flag = (flag and check_density_operator_property_positiv(rho))
+    return flag
 
 def kolmogorov_distance(rho1, rho2):
     ew, ev = np.linalg.eig(rho1 - rho2)
@@ -284,3 +332,10 @@ def matrix_root(m):
     if np.count_nonzero(np.round(m - np.diag(m))) == 0: # check for diagonal
         return np.sqrt(m)
     return sl.sqrtm(m)
+
+def matrix_root2(m):
+    """Return the root of a matrix. Due to the fact that the used function:
+    scipy.linalg.sqrtm diagonal matrices as singular classify and therefore is
+    unusable, there is a check of diagonal."""
+    ev, ew = np.linalg.eig(m)
+    return np.diag(np.sqrt(ev.real))

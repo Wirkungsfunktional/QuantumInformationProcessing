@@ -87,5 +87,15 @@ class QuantumInformationFunctionsTestCase(unittest.TestCase):
                                 [11, 27]] )
         self.assertTrue(np.array_equal(QIF.partial_trace(rho), rho_erg))
 
+    def test_partial_trace_random(self):
+        m1 = QIF.make_random_2qubit_density_matrix(0.3)
+        m2 = QIF.make_random_2qubit_density_matrix(0.3)
+        m3 = np.kron(m1, m2)
+        m4 = QIF.partial_trace(QIF.partial_trace(QIF.partial_trace(m3)))
+
+        self.assertTrue(QIF.check_density_operator_property_trace(m4))
+        self.assertTrue(QIF.check_density_operator_property_hermiticty(m4))
+        self.assertTrue(QIF.check_density_operator_property_positiv(m4))
+
 
 unittest.main()
