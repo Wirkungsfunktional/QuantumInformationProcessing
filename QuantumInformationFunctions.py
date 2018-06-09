@@ -38,17 +38,48 @@ Id = np.eye(2)
 
 sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
 
+def create_2qubit_random_density_matrix_ensemble_by_random_unitary(N, n):
+    return [make_pure_random_2qbit_density_matrix_by_unitary(1.0, n) for p in np.linspace(0, 1, N)**(0.5)]
+
+
 def random_unitary(n):
-    H = np.random.randn(n, n)
+    H = 10 * np.random.randn(n, n) + 10j*(np.random.randn(n, n))
     Q, R = sl.qr(H)
     return Q
 
-def make_pure_random_4qbit():
-    rho = np.zeros( (16, 16) ) + 0.j
-    rho[0][0] = 1
-    U = np.kron(np.kron(np.kron(random_unitary(2), random_unitary(2)),random_unitary(2)), random_unitary(2))
-    rho = np.dot(U, np.dot(rho, np.conjugate(np.transpose(U))))
+def make_random_1qubit_density_matrix(p):
+    n = 20
+    r = np.random.rand(3)*n - n/2 # np.random.normal(scale=1.0, size=(15)) #*np.random.rand()
+    r = r / np.dot(r, r)**0.5 * p * np.random.rand()
+    d = np.zeros((2, 2)) + 0.j
+
+    for i in range(3):
+        d += r[i]*sigma[i]/2.0
+    return d + np.eye(2)/2.0
+
+
+
+fixed_m = np.kron(make_random_1qubit_density_matrix(1.0), make_random_1qubit_density_matrix(1.0))
+
+
+def make_pure_random_2qbit_density_matrix_by_unitary(p, n):
+    rho = np.zeros( (4, 4) ) + 0.j
+    pp = np.random.rand(n)
+    pp = pp/np.sum(pp)
+    for i in range(n):
+        rho += np.kron(make_random_1qubit_density_matrix(p), make_random_1qubit_density_matrix(p))*pp[i]
+    U = random_unitary(4)
+    #U = np.kron(random_unitary(2),random_unitary(2))
+    rho = np.dot(U, np.dot(fixed_m, np.conjugate(np.transpose(U))))
     return rho
+
+def partial_transpose(rho):
+    rho[1][0], rho[0][1] = rho[0][1], rho[1][0]
+    rho[1][2], rho[0][3] = rho[0][3], rho[1][2]
+    rho[2][1], rho[3][0] = rho[3][0], rho[2][1]
+    rho[2][3], rho[3][2] = rho[3][2], rho[2][3]
+    return rho
+
 
 def get_index_in_computational_basis(binary_number_string):
     number_string = "0b" + binary_number_string[::-1]
@@ -73,11 +104,6 @@ def partial_trace(rho_ab):
                     rho_ab[get_index_in_computational_basis(bin_string_1)] \
                         [get_index_in_computational_basis(bin_string_2)]
     return rho_red
-
-
-
-
-
 
 
 
@@ -140,15 +166,6 @@ def create_2qubit_random_density_matrix_ensemble_by_pratial_trace(pur_end, N: in
                 n += 1
     return ensemble
 
-def make_random_1make_random_density_matrix(p):
-    n = 20
-    r = np.random.rand(3)*n - n/2 # np.random.normal(scale=1.0, size=(15)) #*np.random.rand()
-    r = r / np.dot(r, r)**0.5 * p * np.random.rand()
-    d = np.zeros((2, 2)) + 0.j
-
-    for i in range(3):
-        d += r[i]*sigma[i]/2.0
-    return d + np.eye(2)/2.0
 
 
 def make_random_4qubit_density_matrix() -> np.ndarray:
@@ -181,8 +198,6 @@ def make_random_4qubit_density_matrix() -> np.ndarray:
     #print(purity(rho))
     print(check_density_operator_property_positiv(rho))
     return rho
-
-
 
 
 def make_random_2qubit_density_matrix(p) -> np.ndarray:
@@ -229,10 +244,10 @@ def werner_state(p: float, state: np.ndarray) -> np.ndarray:
 
 def concurrency(rho: np.ndarray) -> float:
     """Compute the Concurrency of a desity matrix according to Woot1998."""
-    rho_tilde = np.dot(sigma_y_4d, np.dot(rho, sigma_y_4d))
+    rho_tilde = np.dot(sigma_y_4d, np.dot(np.transpose(rho), sigma_y_4d))
     R = np.dot(rho, rho_tilde)
     ew, ev = np.linalg.eig(R)
-    ew = np.sort(np.sqrt(np.round(ew.real, 3))) # Rounding is a hack to avoid
+    ew = np.sort(np.sqrt(np.round(ew.real, 5))) # Rounding is a hack to avoid
     # negative allmost zero eigenvalues like -1e-15 in the root
     return np.max([0, ew[3] - ew[0] - ew[1] - ew[2]])
 
@@ -303,7 +318,7 @@ def check_density_operator_property_trace(rho: np.ndarray) -> bool:
 def check_density_operator_property_hermiticty(rho: np.ndarray) -> bool:
     """Check that the density matrix is hermitian. This means equal to its
     transposed and complex conjugated."""
-    return np.array_equal(rho, np.transpose(rho).conjugate())
+    return np.allclose(rho, np.transpose(rho).conjugate())
 
 def check_density_operator_property_positiv(rho):
     try:

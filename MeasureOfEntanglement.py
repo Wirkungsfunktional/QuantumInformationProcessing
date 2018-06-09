@@ -70,8 +70,9 @@ def ensemble_test2():
     plt.hist(pur)
     plt.show()
 
+
+
+
 if __name__ == '__main__':
     print(__doc__)
-    for i in range(10):
-        QIF.make_pure_random_4qbit()
     ensemble_test2()
