@@ -2,6 +2,7 @@ import numpy as np
 import scipy.linalg as sl
 from matplotlib import pyplot as plt
 from typing import List
+import ClassicalInformationFunctions as CIF
 
 __doc__ = """ Collection of functions releated to Quantum Information Theory.
 The implementation is only for learning purpose, there is no focus on
@@ -34,9 +35,28 @@ sigma_z = np.array([[1, 0],[0, -1]])
 sigma = np.array([sigma_x, sigma_y, sigma_z])
 Id = np.eye(2)
 
-
-
 sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
+
+def analyse_desity_matrix(rho):
+    """Perform a list of tools on a given matrix and prints its results."""
+    assert check_density_operator(rho), "rho is not a density matrix"
+    size_a, size_b = rho.shape
+    pur = purity(rho).real
+    fid_to_impur = fidelity(rho, np.eye(size_a)/size_a).real
+    entropy = von_neuman_entropy(rho)
+
+    print("Purity: " + str(pur))
+    print("Fidelity to totally impure state: " + str(fid_to_impur))
+    print("Von-Neuman entropy " + str(entropy))
+
+def von_neuman_entropy(rho):
+    """Diagonalize the density matrix and calculate the classical entropy for
+    this distribution."""
+    assert check_density_operator(rho), "rho is not a density matrix"
+    ew, ev = np.linalg.eigh(rho)
+    return CIF.classical_entropy(np.abs(ew))
+
+
 
 def create_2qubit_random_density_matrix_ensemble_by_random_unitary(N, n):
     return [make_pure_random_2qbit_density_matrix_by_unitary(1.0, n) for p in np.linspace(0, 1, N)**(0.5)]
@@ -47,19 +67,18 @@ def random_unitary(n):
     Q, R = sl.qr(H)
     return Q
 
-def make_random_1qubit_density_matrix(p):
+def make_random_1qubit_density_matrix(p, random_purity_flag = 0):
+    """Create a random density matrix for 1 qubit. p gives the purity of the 
+    matrix and random_purity_flag activate a random purity."""
     n = 20
     r = np.random.rand(3)*n - n/2 # np.random.normal(scale=1.0, size=(15)) #*np.random.rand()
-    r = r / np.dot(r, r)**0.5 * p * np.random.rand()
+    r = r / np.dot(r, r)**0.5 * p * (1 - random_purity_flag*np.random.rand())
     d = np.zeros((2, 2)) + 0.j
 
     for i in range(3):
         d += r[i]*sigma[i]/2.0
     return d + np.eye(2)/2.0
 
-
-
-fixed_m = np.kron(make_random_1qubit_density_matrix(1.0), make_random_1qubit_density_matrix(1.0))
 
 
 def make_pure_random_2qbit_density_matrix_by_unitary(p, n):
@@ -70,7 +89,7 @@ def make_pure_random_2qbit_density_matrix_by_unitary(p, n):
         rho += np.kron(make_random_1qubit_density_matrix(p), make_random_1qubit_density_matrix(p))*pp[i]
     U = random_unitary(4)
     #U = np.kron(random_unitary(2),random_unitary(2))
-    rho = np.dot(U, np.dot(fixed_m, np.conjugate(np.transpose(U))))
+    rho = np.dot(U, np.dot(rho, np.conjugate(np.transpose(U))))
     return rho
 
 def partial_transpose(rho):
@@ -156,9 +175,9 @@ def create_2qubit_random_density_matrix_ensemble_by_pratial_trace(pur_end, N: in
     ensemble = []
     n = 0
     while n < N:
-        rho = make_pure_random_4qbit()
-        if True: #purity(rho) <= 1.0:
-            if True: #check_density_operator_property_positiv(rho):
+        rho = make_random_4qubit_density_matrix()
+        if purity(rho) <= 1.0:
+            if check_density_operator_property_positiv(rho):
                 print(n)
                 m = partial_trace(rho)
                 m1 = partial_trace(m)
@@ -169,12 +188,12 @@ def create_2qubit_random_density_matrix_ensemble_by_pratial_trace(pur_end, N: in
 
 
 def make_random_4qubit_density_matrix() -> np.ndarray:
-    """Creates a 4 dimmensional density matrix by using the Hilbert - Schmidt
-    representation. The matrix can be pure or impure. Better to produce on
-    vector with norm condition."""
+    """Creates a density matrix of a 4 Qubit state. There is no check for the
+    positivity of the matrix. To be save preform a density matrix check
+    afterwards."""
     n = 20
     r = np.random.normal(scale=1.0, size=(93)) #*np.random.rand()
-    r = r / np.dot(r, r)**0.5 * 0.24205 # np.random.rand() * 0.25 # * p
+    r = r / np.dot(r, r)**0.5 * np.random.rand() * 0.25 # * p
     a = r[:3]#np.random.rand(3)*n - int(n/2)
     b = r[3:6]#np.random.rand(3)*n - int(n/2)
     c = r[6:9]
@@ -192,11 +211,6 @@ def make_random_4qubit_density_matrix() -> np.ndarray:
                 for l in range(3):
                     rho += m[i][j][k][l]*np.kron(np.kron(np.kron(sigma[i], sigma[j]), sigma[k]), sigma[l])
     rho += np.eye(16)/16.0
-    print(purity(rho))
-    #print(check_density_operator_property_trace(rho))
-    #print(check_density_operator_property_hermiticty(rho))
-    #print(purity(rho))
-    print(check_density_operator_property_positiv(rho))
     return rho
 
 
@@ -322,6 +336,10 @@ def check_density_operator_property_hermiticty(rho: np.ndarray) -> bool:
 
 def check_density_operator_property_positiv(rho):
     try:
+        if np.isclose(purity(rho), 1):
+            print("rho is pure, positivity check will not perform.")
+            # TODO: Find secure way for pure matrices
+            return True
         np.linalg.cholesky(rho)
         return True
     except:
@@ -330,7 +348,7 @@ def check_density_operator_property_positiv(rho):
 def check_density_operator(rho):
     flag = check_density_operator_property_trace(rho)
     flag = (flag and check_density_operator_property_hermiticty(rho))
-    flag = (flag and check_density_operator_property_positiv(rho))
+    #flag = (flag and check_density_operator_property_positiv(rho))
     return flag
 
 def kolmogorov_distance(rho1, rho2):

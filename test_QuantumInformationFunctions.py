@@ -97,5 +97,15 @@ class QuantumInformationFunctionsTestCase(unittest.TestCase):
         self.assertTrue(QIF.check_density_operator_property_hermiticty(m4))
         self.assertTrue(QIF.check_density_operator_property_positiv(m4))
 
+    def test_von_neuman_entropy(self):
+        m = np.array([  [1 + 1/3, 1/np.sqrt(3) -1.j/np.sqrt(3)],
+                        [1/np.sqrt(3) +1.j/np.sqrt(3), 1 - 1/3]])/2.0
+        H = QIF.von_neuman_entropy(m)
+        self.assertAlmostEqual(H, 0.3236, places=3)
+
+        m = QIF.density_matrix(QIF.q11)
+        H = QIF.von_neuman_entropy(m)
+        self.assertAlmostEqual(H, 0, places=3)
+
 
 unittest.main()

@@ -29,13 +29,14 @@ print(np.dot(QIF.sigma_x, np.dot(red_c, QIF.sigma_x)))
 print(np.dot(QIF.sigma_y, np.dot(red_d, QIF.sigma_y)))
 
 n = 100
-p = np.linspace(0, 0.999, n)
+p = np.linspace(0.001, 0.999, n)
 err = np.zeros(n)
 err_test = np.zeros(n)
 for i, pp in enumerate(p):
     rho_aAB = np.kron(QIF.werner_state(pp, QIF.psi_m), rho_a)
     red_a = QIF.partial_trace(QIF.partial_trace((np.dot(rho_aAB, mess_op_a))))/ np.trace(np.dot(rho_aAB, mess_op_a))
     err[i] = QIF.fidelity_qubit(red_a, rho_a)
+    #print((QIF.von_neuman_entropy(rho_aAB) - QIF.von_neuman_entropy(red_a)))
     err_test[i] = np.trace(QIF.matrix_root2((1 - pp)/2.0*rho_a + pp*np.dot(rho_a, rho_a)))**2
 
 
@@ -52,7 +53,7 @@ plt.show()
 
 ppp = 0.999
 for i, pp in enumerate(p):
-    rho_a = QIF.make_random_1make_random_density_matrix(pp**0.5)
+    rho_a = QIF.make_random_1qubit_density_matrix(pp**0.5)
     rho_aAB = np.kron(QIF.werner_state(ppp, QIF.psi_m), rho_a)
     red_a = QIF.partial_trace(QIF.partial_trace((np.dot(rho_aAB, mess_op_a))))/ np.trace(np.dot(rho_aAB, mess_op_a))
     fid = QIF.fidelity_qubit(red_a, rho_a)
