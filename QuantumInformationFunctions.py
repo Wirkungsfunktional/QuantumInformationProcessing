@@ -3,6 +3,7 @@ import scipy.linalg as sl
 from matplotlib import pyplot as plt
 from typing import List
 import ClassicalInformationFunctions as CIF
+import MatrixFunctions as MF
 
 __doc__ = """ Collection of functions releated to Quantum Information Theory.
 The implementation is only for learning purpose, there is no focus on
@@ -62,13 +63,9 @@ def create_2qubit_random_density_matrix_ensemble_by_random_unitary(N, n):
     return [make_pure_random_2qbit_density_matrix_by_unitary(1.0, n) for p in np.linspace(0, 1, N)**(0.5)]
 
 
-def random_unitary(n):
-    H = 10 * np.random.randn(n, n) + 10j*(np.random.randn(n, n))
-    Q, R = sl.qr(H)
-    return Q
 
 def make_random_1qubit_density_matrix(p, random_purity_flag = 0):
-    """Create a random density matrix for 1 qubit. p gives the purity of the 
+    """Create a random density matrix for 1 qubit. p gives the purity of the
     matrix and random_purity_flag activate a random purity."""
     n = 20
     r = np.random.rand(3)*n - n/2 # np.random.normal(scale=1.0, size=(15)) #*np.random.rand()
@@ -87,8 +84,7 @@ def make_pure_random_2qbit_density_matrix_by_unitary(p, n):
     pp = pp/np.sum(pp)
     for i in range(n):
         rho += np.kron(make_random_1qubit_density_matrix(p), make_random_1qubit_density_matrix(p))*pp[i]
-    U = random_unitary(4)
-    #U = np.kron(random_unitary(2),random_unitary(2))
+    U = MF.make_matrix_random_unitary(4, 4)
     rho = np.dot(U, np.dot(rho, np.conjugate(np.transpose(U))))
     return rho
 

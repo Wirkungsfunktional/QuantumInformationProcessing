@@ -24,23 +24,6 @@ class ClassicalInformationFunctionsTestCase(unittest.TestCase):
         H = CIF.conditional_entropy(p_x, p_yx)
         self.assertAlmostEqual(H, 0.934, places=3)
 
-    def test_check_simple_stochastic_matrix(self):
-        m =    np.array([   [0.70, 0.20, 0.10],
-                            [0.05, 0.80, 0.15],
-                            [0.10, 0.10, 0.80]])
-        self.assertTrue(CIF.check_simple_stochastic_matrix(m))
-        m = np.array([[1.0, 0.2, 0.3],[0.0, 0.8, 0.7]])
-        self.assertFalse(CIF.check_simple_stochastic_matrix(m))
-
-
-    def test_check_double_stochastic_matrix(self):
-        m =    np.array([   [0.70, 0.20, 0.10],
-                            [0.05, 0.80, 0.15],
-                            [0.10, 0.10, 0.80]])
-        self.assertFalse(CIF.check_double_stochastic_matrix(m))
-        m = np.array([  [0.5, 0.5],
-                        [0.5, 0.5]])
-        self.assertTrue(CIF.check_double_stochastic_matrix(m))
 
     def test_mutual_information(self):
         p_x = np.array([0.1, 0.3, 0.6])
@@ -102,6 +85,19 @@ class ClassicalInformationFunctionsTestCase(unittest.TestCase):
         self.assertTrue(len(alphabet2 ^ set(["0", "1", "a", "b", "c", "e"])) == 0)
 
 
+    def test_check_fano_condition(self):
+        code1 = {   "x1": "00",
+                    "x2": "01",
+                    "x3": "10",
+                    "x4": "110",
+                    "x5": "111",
+                    "x6": "1101"}
+        code2 = {   "x1": "abc",
+                    "x2": "01",
+                    "x3": "ea"}
+
+        self.assertTrue(CIF.check_fano_condition(code2))
+        self.assertFalse(CIF.check_fano_condition(code1))
 
 
 

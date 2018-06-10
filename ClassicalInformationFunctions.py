@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats as sst
+import MatrixFunctions as MF
 
 
 __doc__ = """Collection of functions used in classical information theory. The
@@ -13,7 +14,7 @@ def classical_entropy(p):
     return sst.entropy(p, base=2)
 
 def conditional_entropy(p_x, p_yx):
-    assert check_simple_stochastic_matrix(p_yx), "conditional matrix p_yx is not \
+    assert MF.check_matrix_simple_stochastic(p_yx), "conditional matrix p_yx is not \
     simple stochastic."
     assert check_l1_norm(p_x), "p_x is not l1-normed"
     H = 0
@@ -21,22 +22,6 @@ def conditional_entropy(p_x, p_yx):
         H += p * classical_entropy(p_yx[i])
     return H
 
-def check_simple_stochastic_matrix(m):
-    """Check that the sum over each row is 1."""
-    size_a, size_b = m.shape
-    one_row = np.ones(size_b)
-    res_vec = np.dot(m, one_row)
-    return np.allclose(res_vec, np.ones(size_a))
-
-def check_double_stochastic_matrix(m):
-    """Check that the sum over each row is 1 and the sum over each column is 1."""
-    size_a, size_b = m.shape
-    one_row_a = np.ones(size_a)
-    one_row_b = np.ones(size_b)
-    res_vec_a = np.dot(np.transpose(m), one_row_a)
-    res_vec_b = np.dot(m, one_row_b)
-    return (np.allclose(res_vec_a, one_row_b) and
-            np.allclose(res_vec_b, one_row_b))
 
 def check_l1_norm(p):
     return np.isclose(np.sum(p), 1)
@@ -57,12 +42,12 @@ def get_conditional_prob_from_joint_prob(p_xy):
     assert check_l1_norm(p_x), "p_x is not l1-normed."
     for i in range(size_a):
         p_xy[i] *= 1/p_x[i]
-    assert check_simple_stochastic_matrix(p_xy), "after calculation the matrix \
+    assert MF.check_matrix_simple_stochastic(p_xy), "after calculation the matrix \
     is not a conditional probability matrix"
     return p_xy
 
 def mutual_information(p_x, p_yx):
-    assert check_simple_stochastic_matrix(p_yx), "conditional matrix p_yx is not \
+    assert MF.check_matrix_simple_stochastic(p_yx), "conditional matrix p_yx is not \
     simple stochastic."
     assert check_l1_norm(p_x), "p_x is not l1-normed"
     p_y = np.dot(np.transpose(p_yx), p_x)
@@ -90,3 +75,18 @@ def check_kraft_inequality(code_dict):
     for word, code in code_dict.items():
         s += 1/D**len(code)
     return (s <= 1)
+
+def check_fano_condition(code_dict):
+    code_words = [code for w, code in code_dict.items()]
+    code_words = sorted(code_words, key=len)
+    while len(code_words) != 0:
+        elem = code_words.pop(0)
+        for b in code_words:
+            if elem == b[:len(elem)]:
+                return False
+    return True
+
+def analyse_code(code_dict):
+    alphabet = get_alphabet(code_dict)
+    flag_kraft_inequality = check_kraft_inequality(code_dict)
+    flag_fano = check_fano_condition(code_dict)
