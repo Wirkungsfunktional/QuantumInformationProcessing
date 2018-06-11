@@ -50,6 +50,20 @@ class MatrixFunctionsTestCase(unittest.TestCase):
                         [0.5, 0.5]])
         self.assertTrue(MF.check_matrix_double_stochastic(m))
 
+    def test_check_matrixy_antisymmetric(self):
+        m = np.array([  [0, 1, 2, 3],
+                        [-1, 0,-4,-5],
+                        [-2, 4, 0,-6],
+                        [-3, 5, 6, 0]])
+        self.assertTrue(MF.check_matrixy_antisymmetric(m))
+        self.assertFalse(MF.check_matrixy_antisymmetric(np.eye(2)))
+
+    def test_check_matrix_diagonal(self):
+        m = np.eye(5)
+        self.assertTrue(MF.check_matrix_diagonal(m))
+        m[0][1] = 1
+        self.assertFalse(MF.check_matrix_diagonal(m))
+
 
 
 

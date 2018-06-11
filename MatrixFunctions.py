@@ -17,34 +17,24 @@ def check_matrix_hermitian(m: np.ndarray) -> bool:
     assert check_matrix_square(m), "matrix is not a square matrix"
     return np.allclose(m, np.transpose(np.conjugate(m)))
 
-def check_matrix_positiv(m: np.ndarray) -> bool:
-    pass
-
 def check_matrix_unitary(m: np.ndarray) -> bool:
     a, b = m.shape
     return (np.allclose(np.dot(m, np.conjugate(m.T)), np.eye(a)) and \
             np.allclose(np.dot(np.conjugate(m.T), m), np.eye(b)))
-
-def check_matrix_normal(m: np.ndarray) -> bool:
-    pass
 
 def check_matrix_orthogonal(m: np.ndarray) -> bool:
     a, b = m.shape
     return (np.allclose(np.dot(m, m.T), np.eye(a)) and \
             np.allclose(np.dot(m.T, m), np.eye(b)))
 
-def check_matrix_complex(m: np.ndarray) -> bool:
-    pass
 
 def check_matrix_diagonal(m: np.ndarray) -> bool:
-    pass
+    return np.allclose(m, np.diag(np.diagonal(m)))
 
 def check_matrix_triagonal(m: np.ndarray) -> bool:
     z = np.zeros_like(m)
     return (np.allclose(np.triu(m, 1), z) or np.allclose(np.tril(m, -1), z))
 
-def check_matrix_singular(m: np.ndarray) -> bool:
-    pass
 
 def check_matrix_simple_stochastic(m: np.ndarray) -> bool:
     """Check that the sum over each row is 1."""
@@ -58,7 +48,23 @@ def check_matrix_double_stochastic(m: np.ndarray) -> bool:
     return (check_matrix_simple_stochastic(m) and
             check_matrix_simple_stochastic(m.T))
 
+def check_matrixy_antisymmetric(m: np.ndarray) -> bool:
+    assert check_matrix_square(m), "matrix is not a square matrix"
+    return np.allclose(-m, np.transpose(m))
 
+
+
+def check_matrix_complex(m: np.ndarray) -> bool:
+    pass
+
+def check_matrix_singular(m: np.ndarray) -> bool:
+    pass
+
+def check_matrix_normal(m: np.ndarray) -> bool:
+    pass
+
+def check_matrix_positiv(m: np.ndarray) -> bool:
+    pass
 """Analyse Tools -----------------------------------------------------------"""
 
 def analyse_matrix_sparse(m: np.ndarray, rtol_places=8) -> Tuple[int, int]:
