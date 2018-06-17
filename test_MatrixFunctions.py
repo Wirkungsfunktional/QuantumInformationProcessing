@@ -1,6 +1,7 @@
 import MatrixFunctions as MF
 import unittest
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 class MatrixFunctionsTestCase(unittest.TestCase):
@@ -63,6 +64,10 @@ class MatrixFunctionsTestCase(unittest.TestCase):
         self.assertTrue(MF.check_matrix_diagonal(m))
         m[0][1] = 1
         self.assertFalse(MF.check_matrix_diagonal(m))
+
+
+
+
 
 
 

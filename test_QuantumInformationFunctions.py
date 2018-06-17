@@ -107,5 +107,21 @@ class QuantumInformationFunctionsTestCase(unittest.TestCase):
         H = QIF.von_neuman_entropy(m)
         self.assertAlmostEqual(H, 0, places=3)
 
+    def test_create_maximally_entangled_state(self):
+        self.assertTrue(np.allclose(QIF.create_maximally_entangled_state(2, 0, 0), QIF.phi_p))
+        self.assertTrue(np.allclose(QIF.create_maximally_entangled_state(2, 1, 0), QIF.phi_m))
+        self.assertTrue(np.allclose(QIF.create_maximally_entangled_state(2, 0, 1), QIF.psi_p))
+        self.assertTrue(np.allclose(QIF.create_maximally_entangled_state(2, 1, 1), QIF.psi_m))
+
+        phi = QIF.create_maximally_entangled_state(4, 0, 0)
+        rho = QIF.density_matrix(phi)
+        rho_a = QIF.partial_trace(rho)
+        self.assertAlmostEqual(QIF.von_neuman_entropy(rho_a), 1.0)
+
+
+
+
+
+
 
 unittest.main()

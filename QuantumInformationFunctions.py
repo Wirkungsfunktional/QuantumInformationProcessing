@@ -60,7 +60,7 @@ def von_neuman_entropy(rho):
 
 
 def create_2qubit_random_density_matrix_ensemble_by_random_unitary(N, n):
-    return [make_pure_random_2qbit_density_matrix_by_unitary(1.0, n) for p in np.linspace(0, 1, N)**(0.5)]
+    return [make_pure_random_2qbit_density_matrix_by_unitary_partial_trace(1.0, n) for p in np.linspace(0, 1, N)**(0.5)]
 
 
 
@@ -87,6 +87,21 @@ def make_pure_random_2qbit_density_matrix_by_unitary(p, n):
     U = MF.make_matrix_random_unitary(4, 4)
     rho = np.dot(U, np.dot(rho, np.conjugate(np.transpose(U))))
     return rho
+
+def make_pure_random_2qbit_density_matrix_by_unitary_partial_trace(p, n):
+    """Create an ensemble of density matrices by first constructing an Seperable
+    state of 4 uncoupled qubits, then applying a random unitary matrix and then
+    tracing out 2 qbits."""
+    rho = np.zeros( (16, 16) ) + 0.j
+    rho +=  np.kron(make_random_1qubit_density_matrix(1),
+            np.kron(make_random_1qubit_density_matrix(1),
+            np.kron(make_random_1qubit_density_matrix(1),
+                    make_random_1qubit_density_matrix(1))))
+    U = MF.make_matrix_random_unitary(16, 16)
+    rho = np.dot(U, np.dot(rho, np.conjugate(np.transpose(U))))
+    rho = partial_trace(partial_trace(rho))
+    return rho
+
 
 def partial_transpose(rho):
     rho[1][0], rho[0][1] = rho[0][1], rho[1][0]
@@ -216,7 +231,7 @@ def make_random_2qubit_density_matrix(p) -> np.ndarray:
     vector with norm condition."""
     n = 20
     r = np.random.rand(15)*n - n/2 # np.random.normal(scale=1.0, size=(15)) #*np.random.rand()
-    r = r / np.dot(r, r)**0.5 * (3/16)**0.5 * p
+    r = r / np.dot(r, r)**0.5 * (3/16)**0.5*np.random.rand()# * p
     a = r[:3]#np.random.rand(3)*n - int(n/2)
     b = r[3:6]#np.random.rand(3)*n - int(n/2)
     c = r[6:].reshape( (3, 3) )#np.random.rand(3, 3)*n - int(n/2)
@@ -245,7 +260,8 @@ def entanglement_2qbit(c: np.ndarray) -> np.ndarray:
 
 def density_matrix(state: np.ndarray) -> np.ndarray:
     """Compute the outer product of $\ket{state}\bra{state}$ of an Vector state."""
-    return np.outer(state, state)
+    assert np.isclose(np.dot(state, state), 1), "state is not normed"
+    return np.outer(np.conjugate(state), state)
 
 def werner_state(p: float, state: np.ndarray) -> np.ndarray:
     """Compute the werner state, which is the superposition of an entangled
@@ -368,3 +384,58 @@ def matrix_root2(m):
     unusable, there is a check of diagonal."""
     ev, ew = np.linalg.eig(m)
     return np.diag(np.sqrt(ev.real))
+
+
+
+def create_maximally_entangled_state(D: int, l: int, m: int) -> np.ndarray:
+    """Creates a maximally entangled state according exercise 3.1 of Quantum
+    Information 2018. D is the Dimension of H_A and H_B, such that the resulting
+    state is in H_A \otimes H_B. For the case D = 2 it will be one of the Bell
+    states. The selection which on is done by l,m \in 0,...,D-1"""
+    assert l < D and l >= 0, "l have to be in 0,...,D-1"
+    assert m < D and m >= 0, "m have to be in 0,...,D-1"
+    base = np.eye(D)            # Create the computational basis
+    phi = np.zeros(D**2) + 0.j  # initiate the resulting state
+    for k in range(D):
+        phi +=    np.exp(2*np.pi * 1.j * l * k / D) \
+                * np.kron(base[k], base[(k - m) % D])   # state
+    return phi/np.sqrt(D)                               # normation
+
+
+def create_random_ensemble_arcsin(N: int, K: int, size: int) -> List[np.ndarray]:
+    """TODO: Need more verification.
+    @see: ZyPeNeCo2011"""
+    rho_list = []
+    n = int(N/2)
+    phi1 = create_maximally_entangled_state(N, 0, 0)
+    for i in range(size):
+        U = np.zeros( (N**2, N**2) ) + 0.j
+        for k in range(1, K):
+            U += np.kron(np.eye(N), MF.make_matrix_random_unitary(N, N))
+            #U += np.kron(MF.make_matrix_random_unitary(N, N), np.eye(N))
+        phi2 = np.dot(U, phi1)
+
+        psi = (phi1 + phi2)
+        psi /= np.sqrt(np.dot(psi, psi))
+
+        rho = density_matrix(psi)
+        for k in range(n):
+            rho = partial_trace(rho)/np.trace(rho)
+        rho /= np.trace(rho)
+        assert check_density_operator(rho), "rho is not a density matrix"
+        rho_list.append(rho)
+
+    return rho_list
+
+def create_random_ensemble_ginibre(N:int) -> List[np.ndarray]:
+    """Creates an ensemble of density matrices with size N according to the
+    Hilbert-Schmidt measure in the statespace of 2 qubit (4 x 4) using the
+    construction by ginibre matrices."""
+    return [make_random_density_matrix_from_ginibre(4) for i in range(N)]
+
+def make_random_density_matrix_from_ginibre(N: int) -> np.ndarray:
+    """Creates a random density matrix of size N from a ginibre matrix.
+    @see MatrixFunctions.make_matrix_ginibre"""
+    m = MF.make_matrix_ginibre(N)       # Defines Measure of matrix and positiv
+    m2 = np.dot(np.conjugate(m.T),m)    # Make hermitian
+    return m2 / np.trace(m2)            # Trace to one normation

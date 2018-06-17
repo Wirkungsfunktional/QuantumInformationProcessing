@@ -83,7 +83,7 @@ def analyse_matrix_sparse(m: np.ndarray, rtol_places=8) -> Tuple[int, int]:
 """Creation Tools -----------------------------------------------------------"""
 
 
-def make_matrix_random_unitary(n: int, m: int, mu_real=1, mu_imag=1) -> np.ndarray:
+def make_matrix_random_unitary(n: int, m: int, mu_real=1/np.sqrt(2), mu_imag=1/np.sqrt(2)) -> np.ndarray:
     H = mu_real*np.random.randn(n, m) + mu_imag*1.j*np.random.randn(n, m)
     Q, R = sl.qr(H)
     return Q
@@ -92,3 +92,14 @@ def make_matrix_random_triagonal(n: int, m: int, mu_real=1, mu_imag=1) -> np.nda
     H = mu_real*np.random.randn(n, m) + mu_imag*1.j*np.random.randn(n, m)
     Q, R = sl.qr(H)
     return R
+
+def make_matrix_ginibre(n: int) -> np.ndarray:
+    """Create a random complex matrix with variance 1 and mean 0. By theorem,
+    the eigenvalues of this matrix (scaled by 1/sqrt(n)) lies within the unit
+    circle in the complex plan. This matrix can be usefull to create density
+    matrices
+    @see: QuantumInformationFunctions.create_random_ensemble_ginibre
+    """
+    m1 = np.random.randn(n, n) /np.sqrt(2)
+    m2 = np.random.randn(n, n) /np.sqrt(2)
+    return m1 + 1.j * m2

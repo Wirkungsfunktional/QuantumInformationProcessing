@@ -9,11 +9,11 @@ already existence in scipy or numpy. This modul is only for learning purpous,
 how to write such a code by myself. The learning outcome is a better
 understanding of the Theory and not a fast and efficent library."""
 
-def classical_entropy(p: np.ndarray) -> double:
+def classical_entropy(p: np.ndarray) -> float:
     assert check_l1_norm(p), "p is not l1-normed"
     return sst.entropy(p, base=2)
 
-def conditional_entropy(p_x: np.ndarray, p_yx: np.ndarray) -> double:
+def conditional_entropy(p_x: np.ndarray, p_yx: np.ndarray) -> float:
     assert MF.check_matrix_simple_stochastic(p_yx), "conditional matrix p_yx is not \
     simple stochastic."
     assert check_l1_norm(p_x), "p_x is not l1-normed"
@@ -29,7 +29,7 @@ def check_l1_norm(p: np.ndarray) -> bool:
 def check_joint_probability_matrix(m: np.ndarray) -> bool:
     return np.isclose(np.sum(m), 1.0)
 
-def joint_entropy(p_x: np.ndarrayy) -> double:
+def joint_entropy(p_x: np.ndarray) -> float:
     assert check_joint_probability_matrix(p_xy), "p_xy is not a joint probability \
     matrix."
     return classical_entropy(p_xy.flatten())
@@ -46,7 +46,7 @@ def get_conditional_prob_from_joint_prob(p_xy: np.ndarray) -> np.ndarray:
     is not a conditional probability matrix"
     return p_xy
 
-def mutual_information(p_x: np.ndarray, p_yx: np.ndarray) -> double:
+def mutual_information(p_x: np.ndarray, p_yx: np.ndarray) -> float:
     assert MF.check_matrix_simple_stochastic(p_yx), "conditional matrix p_yx is not \
     simple stochastic."
     assert check_l1_norm(p_x), "p_x is not l1-normed"
@@ -57,7 +57,7 @@ def mutual_information(p_x: np.ndarray, p_yx: np.ndarray) -> double:
 def information_flow(f, H):
     return f * H
 
-def kullback_leibler_distance(p: np.ndarray, q: np.ndarray) -> double:
+def kullback_leibler_distance(p: np.ndarray, q: np.ndarray) -> float:
     assert check_l1_norm(p), "p is not l1-normed"
     assert check_l1_norm(q), "q is not l1-normed"
     return sst.entropy(p, q, base=2)
