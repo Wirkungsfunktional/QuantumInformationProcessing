@@ -65,6 +65,12 @@ class MatrixFunctionsTestCase(unittest.TestCase):
         m[0][1] = 1
         self.assertFalse(MF.check_matrix_diagonal(m))
 
+    def test_operation_matrix_commutation(self):
+        m1 = np.array([[0,1],[1,0]]) + 0.j
+        m2 = np.array([[1,0],[0,-1]]) + 0.j
+        m3 = np.array([[0,-1.j],[1.j,0]])
+        self.assertTrue(np.allclose(MF.operation_matrix_commutation(m1, m2), -2.j*m3))
+
 
 
 

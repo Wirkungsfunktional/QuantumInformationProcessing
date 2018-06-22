@@ -103,3 +103,9 @@ def make_matrix_ginibre(n: int) -> np.ndarray:
     m1 = np.random.randn(n, n) /np.sqrt(2)
     m2 = np.random.randn(n, n) /np.sqrt(2)
     return m1 + 1.j * m2
+
+
+"""Operations ---------------------------------------------------------------"""
+
+def operation_matrix_commutation(m1: np.ndarray, m2: np.ndarray) -> np.ndarray:
+    return np.dot(m1, m2) - np.dot(m2, m1)

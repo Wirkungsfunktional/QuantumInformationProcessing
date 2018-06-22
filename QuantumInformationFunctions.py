@@ -104,10 +104,29 @@ def make_pure_random_2qbit_density_matrix_by_unitary_partial_trace(p, n):
 
 
 def partial_transpose(rho):
+    rho = np.copy(rho)
     rho[1][0], rho[0][1] = rho[0][1], rho[1][0]
     rho[1][2], rho[0][3] = rho[0][3], rho[1][2]
     rho[2][1], rho[3][0] = rho[3][0], rho[2][1]
     rho[2][3], rho[3][2] = rho[3][2], rho[2][3]
+    return rho
+
+def partial_transpose_a(rho):
+    rho = np.copy(rho)
+    rho[2][0], rho[0][2] = rho[0][2], rho[2][0]
+    rho[1][2], rho[3][0] = rho[3][0], rho[1][2]
+    rho[2][1], rho[0][3] = rho[0][3], rho[2][1]
+    rho[1][3], rho[3][1] = rho[3][1], rho[1][3]
+    return rho
+
+def information_swap(rho):
+    rho = np.copy(rho)
+    rho[0][1], rho[0][2] = rho[0][2], rho[0][1]
+    rho[1][0], rho[2][0] = rho[2][0], rho[1][0]
+    rho[1][1], rho[2][2] = rho[2][2], rho[1][1]
+    rho[2][1], rho[1][2] = rho[1][2], rho[2][1]
+    rho[1][3], rho[2][3] = rho[2][3], rho[1][3]
+    rho[3][1], rho[3][2] = rho[3][2], rho[3][1]
     return rho
 
 
@@ -284,7 +303,7 @@ def fidelity(rho1: np.ndarray, rho2: np.ndarray) -> float:
     if np.isclose(purity(rho1), 1.0):
         print("rho1 is pure") # TODO: Retrieve State form desity matrix and use
         # diferent formular for this, because the following procedure may fail
-        raise ValueError("Pure State")
+        #raise V    alueError("Pure State")
     if np.isclose(purity(rho2), 1.0):
         print("rho2 is pure")
     try:
@@ -303,7 +322,7 @@ def check_majorisation_of_vectors(x: np.ndarray, y: np.ndarray) -> bool:
     """Check whether x ~ y: \sum^d x_i <= \sum^d y_i for x_i, y_i descending
     ordered for all d."""
     assert len(x) == len(y), "Not equal length."
-    ret = 1
+    ret = True
     sx = 0
     sy = 0
     x[::-1].sort()      # Sorting in descending order
@@ -319,7 +338,7 @@ def check_majorisation_of_matrices(A: np.ndarray, B: np.ndarray) -> bool:
     the vector of all eigenvalues of X."""
     ew_A, ev = np.linalg.eig(A)
     ew_B, ev = np.linalg.eig(B)
-    return check_majorisation_of_vectors(ew_A, ew_B)
+    return check_majorisation_of_vectors(ew_A.real, ew_B.real)
 
 def purity(rho: np.ndarray) -> float:
     """Gives the purity of a density matrix. By definition a density matrix has
@@ -368,7 +387,7 @@ def kolmogorov_distance(rho1, rho2):
     return np.sum(np.abs(ew))/2.0
 
 def trace_norm(A):
-    return np.trace(matrix_root(np.dot(np.transpose(A.conjugate()), A)))
+    return np.trace(matrix_root2(np.dot(np.transpose(A.conjugate()), A)))
 
 def matrix_root(m):
     """Return the root of a matrix. Due to the fact that the used function:
@@ -427,11 +446,25 @@ def create_random_ensemble_arcsin(N: int, K: int, size: int) -> List[np.ndarray]
 
     return rho_list
 
-def create_random_ensemble_ginibre(N:int) -> List[np.ndarray]:
+def create_random_ensemble_ginibre(N:int, n = 4) -> List[np.ndarray]:
     """Creates an ensemble of density matrices with size N according to the
     Hilbert-Schmidt measure in the statespace of 2 qubit (4 x 4) using the
     construction by ginibre matrices."""
-    return [make_random_density_matrix_from_ginibre(4) for i in range(N)]
+    return [make_random_density_matrix_from_ginibre(n) for i in range(N)]
+
+
+def create_random_ensemble_pure(N:int, n = 4) -> List[np.ndarray]:
+    list = []
+    for i in range(N):
+        rho = np.kron(  make_random_1qubit_density_matrix(1),
+                        make_random_1qubit_density_matrix(1))
+        U = MF.make_matrix_random_unitary(4, 4)
+        rho = np.dot(U, np.dot(rho, np.conjugate(np.transpose(U))))
+        list.append(rho)
+    return list
+
+
+
 
 def make_random_density_matrix_from_ginibre(N: int) -> np.ndarray:
     """Creates a random density matrix of size N from a ginibre matrix.
@@ -439,3 +472,20 @@ def make_random_density_matrix_from_ginibre(N: int) -> np.ndarray:
     m = MF.make_matrix_ginibre(N)       # Defines Measure of matrix and positiv
     m2 = np.dot(np.conjugate(m.T),m)    # Make hermitian
     return m2 / np.trace(m2)            # Trace to one normation
+
+def untangle_dist(rho: np.ndarray, dp: float) -> float:
+    """Add a totally mixed density matrix to a entangled density matrix in a
+    convex superposition and determine the point where the state become
+    seperable."""
+    p = 0
+    con = concurrency(rho)
+    while con > 0 and p < 1:
+        con = concurrency((1 - p)*rho + p*np.eye(4)/4)
+        p += dp
+
+    return p
+
+
+
+def commuter_matrix(m1, m2):
+    return np.dot(m1, m2) - np.dot(m2, m1)

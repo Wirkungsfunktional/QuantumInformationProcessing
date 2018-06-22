@@ -17,14 +17,16 @@ a set of zero measure of impure entangled states.
 def ensemble_test1():
     e = []
     pur = []
-    N = 10000
+    N = 50000
     pur_end = 0.5
-    rho_check = np.zeros( (4, 4) ) + 0.j
+    rho_check = np.zeros( (4, 4) )
     for rho in QIF.create_random_ensemble_ginibre(N):
         #QIF.create_random_ensemble_arcsin(4, 2, 5000):
         #create_2qubit_random_density_matrix_ensemble(pur_end, N):
-        rho_check += rho
         conc = QIF.concurrency(rho)
+        if conc == 0:
+            rho_check += np.round(rho.real, 4)
+
         pur.append(QIF.purity(rho).real)
         e.append(QIF.entanglement_2qbit(conc))
     e = np.array(e)
@@ -33,7 +35,10 @@ def ensemble_test1():
     pur_ent = pur[np.nonzero(e)]
     entangled = np.count_nonzero(e)
     n = len(e)
-    print(rho_check/n)
+    rho_check /= notentangled
+    print(rho_check)
+    print(np.trace(rho_check))
+
     print("Seperable: " + str(notentangled/n))
     print("Entangled: " + str(entangled/n))
     print("Expect: " + str(8.0/33.0))
@@ -76,7 +81,9 @@ def __ensemble_test2():
     plt.show()
 
 def ensemble_test3(nn = 1):
-    """"""
+    """Create an ensemble by partial_trace construction and determine the ratio
+    of entangled and seperable states. The construction by ginibre ensemble is
+    faster but this procedure is physically more reasonable."""
     e = []
     pur = []
     N = 10000
@@ -122,4 +129,4 @@ def ensemble_test3(nn = 1):
 
 if __name__ == '__main__':
     print(__doc__)
-    ensemble_test3()
+    ensemble_test1()
