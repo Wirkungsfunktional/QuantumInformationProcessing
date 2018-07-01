@@ -30,9 +30,9 @@ psi_p = (q01 + q10) / np.sqrt(2)
 phi_m = (q00 - q11) / np.sqrt(2)
 phi_p = (q00 + q11) / np.sqrt(2)
 
-sigma_x = np.array([[0, 1],[1, 0]])
+sigma_x = np.array([[0, 1],[1, 0]]) + 0.j
 sigma_y = np.array([[0, -1.j],[1.j, 0]])
-sigma_z = np.array([[1, 0],[0, -1]])
+sigma_z = np.array([[1, 0],[0, -1]]) + 0.j
 sigma = np.array([sigma_x, sigma_y, sigma_z])
 Id = np.eye(2)
 
@@ -75,6 +75,18 @@ def make_random_1qubit_density_matrix(p, random_purity_flag = 0):
     for i in range(3):
         d += r[i]*sigma[i]/2.0
     return d + np.eye(2)/2.0
+
+def make_random_seperable_2qubit_density_matrix():
+    rho = np.zeros( (4, 4,) ) + 0.j
+    n = np.random.randint(1, high=10)
+    p = np.random.normal(scale=1.0, size=(n))
+    p = p/np.sum(p)
+    for i in range(n):
+        rho1 = make_random_1qubit_density_matrix(1, 1)
+        rho2 = make_random_1qubit_density_matrix(1, 1)
+        rho += p[i]*np.kron(rho1, rho2)
+    return rho
+
 
 
 
@@ -484,6 +496,27 @@ def untangle_dist(rho: np.ndarray, dp: float) -> float:
         p += dp
 
     return p
+
+def qubit2_conv_comp_base_rep_to_hilbert_schmidt_rep(rho: np.ndarray):
+    a = np.zeros(3) + 0.j
+    b = np.zeros(3) + 0.j
+    t = np.zeros( (3, 3) ) + 0.j
+    for i in range(3):
+        a[i] = np.trace(np.dot(rho, np.kron(Id, sigma[i])))
+        b[i] = np.trace(np.dot(rho, np.kron(sigma[i], Id)))
+        for j in range(3):
+            t[i][j] = np.trace(np.dot(rho, np.kron(sigma[i], sigma[j])))
+
+    return a, b, t
+
+def qubit2_conv_comp_base_rep_to_svd_diag_rep(rho:np.ndarray):
+    a, b, t = qubit2_conv_comp_base_rep_to_hilbert_schmidt_rep(rho)
+    u, s, vh = np.linalg.svd(t)
+    if MF.check_matrix_symmetric(t):
+        print(concurrency(rho))
+    if MF.check_matrixy_antisymmetric(t):
+        print("nant")
+    return np.dot(u.T, a).real, np.dot(vh, b).real, s, u, vh
 
 
 
