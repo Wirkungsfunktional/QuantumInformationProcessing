@@ -86,7 +86,7 @@ def ensemble_test3(nn = 1):
     faster but this procedure is physically more reasonable."""
     e = []
     pur = []
-    N = 10000
+    N = 1000
     rho_check = np.zeros( (4, 4) ) + 0.j
     notentangled = 0
     entangled = 0
@@ -129,4 +129,4 @@ def ensemble_test3(nn = 1):
 
 if __name__ == '__main__':
     print(__doc__)
-    ensemble_test1()
+    ensemble_test3()

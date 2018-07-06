@@ -119,8 +119,8 @@ class QuantumInformationFunctionsTestCase(unittest.TestCase):
         self.assertAlmostEqual(QIF.von_neuman_entropy(rho_a), 1.0)
 
 
-
-
+    def test_check_density_matrix_half_classical(self):
+        self.assertTrue(QIF.check_density_matrix_half_classical(QIF.make_special_state_half_classical()))
 
 
 

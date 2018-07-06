@@ -12,7 +12,6 @@ performance and optimaization.
 
 """
 
-#TODO: Partial transpose
 
 
 
@@ -37,6 +36,37 @@ sigma = np.array([sigma_x, sigma_y, sigma_z])
 Id = np.eye(2)
 
 sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
+
+
+def make_special_state_bound_entangle_2_4():
+    pass
+def make_special_state_bound_entangle_3_3():
+    pass
+def make_special_state_half_classical(q = 3/5, a = np.sqrt(3/4)):
+    """Make the density matrix for a state which satisfies the entropy
+    inequality S_AB <= S_red for one subsystem which is then called as classical
+    but the matrix violate the inequality with respect to the other system which
+    is therefore quantum. See [ZyHoHoHo2001] for further information."""
+    phi1 = a*q00 + np.sqrt(1 - a**2) * q11
+    phi2 = a*q01 + np.sqrt(1 - a**2) * q10
+    return q *density_matrix(phi1) + (1 - q)*density_matrix(phi2)
+
+
+
+def check_density_matrix_half_classical(rho: np.ndarray) -> bool:
+    """Check whether the density matrix violate the inequalities
+        S_AB <= S_A or
+        S_AB <= S_B
+    are they both violated the system is completly quantum. If one is
+    satisfied than the system is classical with respect to this subsystem."""
+
+    SAB = von_neuman_entropy(rho)
+    SA = von_neuman_entropy(partial_trace(rho))
+    SB = von_neuman_entropy(partial_trace(information_swap(rho)))
+    return (np.sign(SAB - SA) != np.sign(SAB - SB))
+
+
+
 
 def analyse_desity_matrix(rho):
     """Perform a list of tools on a given matrix and prints its results."""
@@ -112,6 +142,27 @@ def make_pure_random_2qbit_density_matrix_by_unitary_partial_trace(p, n):
     U = MF.make_matrix_random_unitary(16, 16)
     rho = np.dot(U, np.dot(rho, np.conjugate(np.transpose(U))))
     rho = partial_trace(partial_trace(rho))
+    return rho
+
+def make_pure_random_2qbit_density_matrix_by_unitary_partial_trace2(p, n):
+    """Create an ensemble of density matrices by first constructing an Seperable
+    state of 8 uncoupled qubits, then applying a random unitary matrix and then
+    tracing out to 2 qbits. The state should in principle be closer to the
+    totally mixed state than in the procedure with only 4 uncoupled qubits"""
+    N = 2**8
+    rho = np.zeros( (N, N) ) + 0.j
+    rho +=  np.kron(make_random_1qubit_density_matrix(1),
+            np.kron(make_random_1qubit_density_matrix(1),
+            np.kron(make_random_1qubit_density_matrix(1),
+            np.kron(make_random_1qubit_density_matrix(1),
+            np.kron(make_random_1qubit_density_matrix(1),
+            np.kron(make_random_1qubit_density_matrix(1),
+            np.kron(make_random_1qubit_density_matrix(1),
+                    make_random_1qubit_density_matrix(1)
+                    )))))))
+    U = MF.make_matrix_random_unitary(N, N)
+    rho = np.dot(U, np.dot(rho, np.conjugate(np.transpose(U))))
+    rho = partial_trace(partial_trace(partial_trace(partial_trace(partial_trace(partial_trace(rho))))))
     return rho
 
 
