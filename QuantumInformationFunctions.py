@@ -24,6 +24,30 @@ q01 = np.outer(q0, q1).flatten()
 q10 = np.outer(q1, q0).flatten()
 q11 = np.outer(q1, q1).flatten()
 
+q000 = np.kron(q0, np.kron(q0, q0)) + 0.j
+q001 = np.kron(q0, np.kron(q0, q1)) + 0.j
+q010 = np.kron(q0, np.kron(q1, q0)) + 0.j
+q011 = np.kron(q0, np.kron(q1, q1)) + 0.j
+q100 = np.kron(q1, np.kron(q0, q0)) + 0.j
+q101 = np.kron(q1, np.kron(q0, q1)) + 0.j
+q110 = np.kron(q1, np.kron(q1, q0)) + 0.j
+q111 = np.kron(q1, np.kron(q1, q1)) + 0.j
+
+GHZ_p = (q000 + q111)/np.sqrt(2)
+GHZ_m = (q000 + q111)/np.sqrt(2)
+
+W1 = (q100 + q010 + q001)/np.sqrt(3)
+W2 = (q100 + q010 - q001)/np.sqrt(3)
+W3 = (q100 - q010 + q001)/np.sqrt(3)
+W4 = (q100 - q010 - q001)/np.sqrt(3)
+W5 = (-q100 + q010 + q001)/np.sqrt(3)
+W5 = (-q100 + q010 - q001)/np.sqrt(3)
+W6 = (-q100 - q010 + q001)/np.sqrt(3)
+W7 = (-q100 - q010 - q001)/np.sqrt(3)
+
+
+
+
 psi_m = (q01 - q10) / np.sqrt(2)
 psi_p = (q01 + q10) / np.sqrt(2)
 phi_m = (q00 - q11) / np.sqrt(2)
@@ -37,6 +61,23 @@ Id = np.eye(2)
 
 sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
 
+def create_base_n_comp(N: int) -> List[np.ndarray]:
+    base = []
+    base_set = [q0, q1]
+    for i in range(2**N):
+        numb = ('{0:0' + str(N) + 'b}').format(i)[::-1]
+        state = np.kron(base_set[int(numb[1])], base_set[int(numb[0])]) + 0.j
+        for k in range(2, N):
+            state = np.kron(base_set[int(numb[k])], state)
+        base.append(state)
+    return base
+
+def make_n_dim_hadamard_state(N: int) -> np.ndarray:
+    base = create_base_n_comp(N)
+    state = np.zeros(2**N) + 0.j
+    for s in base:
+        state += s
+    return state/np.sqrt(2**N)
 
 def make_special_state_bound_entangle_2_4():
     pass
@@ -391,8 +432,8 @@ def check_majorisation_of_vectors(x: np.ndarray, y: np.ndarray) -> bool:
     x[::-1].sort()      # Sorting in descending order
     y[::-1].sort()
     for i in range(len(x)):
-        sx += x[i]
-        sy += y[i]
+        sx += np.round(x[i], 4)
+        sy += np.round(y[i], 4)
         ret = (ret and (sx <= sy))
     return ret
 

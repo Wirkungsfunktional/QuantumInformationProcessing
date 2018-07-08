@@ -122,6 +122,10 @@ class QuantumInformationFunctionsTestCase(unittest.TestCase):
     def test_check_density_matrix_half_classical(self):
         self.assertTrue(QIF.check_density_matrix_half_classical(QIF.make_special_state_half_classical()))
 
+    def test_make_n_dim_hadamard_state(self):
+        state0 = (QIF.q000 + QIF.q001 + QIF.q010 + QIF.q011 + QIF.q100 + QIF.q101 + QIF.q110 + QIF.q111)/np.sqrt(8)
+        self.assertTrue(np.allclose(QIF.make_n_dim_hadamard_state(3), state0))
+
 
 
 unittest.main()
