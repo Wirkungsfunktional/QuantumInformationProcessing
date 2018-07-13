@@ -64,8 +64,6 @@ qc.x(qr[1])
 
 qc.h(qr[0])
 qc.h(qr[1])
-
-
 """
 qc.h(qr[0])
 qc.cx(qr[0], qr[1])

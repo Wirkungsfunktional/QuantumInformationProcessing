@@ -13,7 +13,7 @@ def deriv(t, y):
     gamma = 0.5
     omega = 1
     H = omega/2 * np.array([[1, 0],[0, -1]]) + 0.j
-    L = np.sqrt(gamma) * np.array([[0, 1],[0,  0]]) + 0.j
+    L = np.sqrt(gamma) * np.array([[1, 0],[0,  -1]]) + 0.j
     Lh = np.conjugate(L.T)
     y = y.reshape( (2, 2) )
     A = np.dot(L, y)
@@ -25,7 +25,8 @@ def deriv(t, y):
 
 def run():
     rho = QIF.density_matrix((QIF.q1 + QIF.q0) / np.sqrt(2)) + 0.j
-    rho = QIF.density_matrix(QIF.q1) + 0.j
+    #rho = QIF.density_matrix(QIF.q1) + 0.j
+    rho = QIF.make_random_1qubit_density_matrix(1)
     y = si.solve_ivp(deriv, [0, 1000], rho.flatten())
 
     rx = []

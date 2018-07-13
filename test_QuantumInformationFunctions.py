@@ -127,5 +127,26 @@ class QuantumInformationFunctionsTestCase(unittest.TestCase):
         self.assertTrue(np.allclose(QIF.make_n_dim_hadamard_state(3), state0))
 
 
+    def test_create_base_n_comp(self):
+        check_base = [  np.array([1,0,0,0]),
+                        np.array([0,1,0,0]),
+                        np.array([0,0,1,0]),
+                        np.array([0,0,0,1])]
+        test_base = QIF.create_base_n_comp(2)
+        for i, test_state in enumerate(test_base):
+            self.assertTrue(np.allclose(test_state, check_base[i]))
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 unittest.main()

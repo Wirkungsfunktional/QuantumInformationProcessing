@@ -61,19 +61,31 @@ Id = np.eye(2)
 
 sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
 
-def create_base_n_comp(N: int) -> List[np.ndarray]:
-    base = []
-    base_set = [q0, q1]
-    for i in range(2**N):
-        numb = ('{0:0' + str(N) + 'b}').format(i)[::-1]
-        state = np.kron(base_set[int(numb[1])], base_set[int(numb[0])]) + 0.j
-        for k in range(2, N):
-            state = np.kron(base_set[int(numb[k])], state)
-        base.append(state)
-    return base
+def get_schmidt_decomposition(state: np.ndarray, N_a: int, N_b: int):
+    # TODO: TestCase
+    A = np.zeros( (N_a, N_b) )
+    base_a = np.eye(N_a)
+    base_b = np.eye(N_b)
+    for i in range(N_a):
+        for j in range(N_b):
+            A[i][j] = np.dot(state, np.kron(base_a[i], base_b[j]))
+    u, s, vh = np.linalg.svd(A)
+    return s, np.dot(u, base_a), np.dot(vh, base_b)
+
+def make_state_from_schmidt_decomposition(sing_val, base_a, base_b):
+    # TODO: TestCase
+    state = np.zeros(len(base_a)*len(base_b))
+    for i in range(len(sing_val)):
+        state += sing_val[i] * np.kron(base_a[i], base_b[i])
+    return state
+
+def create_base_n_qubit_comp(N: int) -> List[np.ndarray]:
+    return np.eye(2**N) + 0.j
+
 
 def make_n_dim_hadamard_state(N: int) -> np.ndarray:
-    base = create_base_n_comp(N)
+    """Creates a full superposition of a n-qubit state |0...0>"""
+    base = create_base_n_qubit_comp(N)
     state = np.zeros(2**N) + 0.j
     for s in base:
         state += s
@@ -384,7 +396,7 @@ def entanglement_2qbit(c: np.ndarray) -> np.ndarray:
 def density_matrix(state: np.ndarray) -> np.ndarray:
     """Compute the outer product of $\ket{state}\bra{state}$ of an Vector state."""
     assert np.isclose(np.dot(state, state), 1), "state is not normed"
-    return np.outer(np.conjugate(state), state)
+    return np.outer(np.conjugate(state), state) + 0.j
 
 def werner_state(p: float, state: np.ndarray) -> np.ndarray:
     """Compute the werner state, which is the superposition of an entangled
@@ -609,6 +621,43 @@ def qubit2_conv_comp_base_rep_to_svd_diag_rep(rho:np.ndarray):
     if MF.check_matrixy_antisymmetric(t):
         print("nant")
     return np.dot(u.T, a).real, np.dot(vh, b).real, s, u, vh
+
+
+def make_cue_matrix(N: int) -> np.ndarray:
+    mu = 0
+    ep = 1/np.sqrt(N)
+    sigma = ep**2 / 8
+    K = np.random.normal(mu, sigma**0.5, (N ,N)) + 0.j
+    H = K + np.transpose(K)
+    return H
+
+def make_random_U_N(eps: float) -> np.ndarray:
+    N1 = 4
+    N2 = 4
+    U = np.kron(make_cue_matrix(N1), make_cue_matrix(N2))
+    U = np.dot(U, np.diag(np.exp(2.j*np.pi*eps*(np.random.random(N1 * N2)-0.5))))
+    return U
+
+def entropy_dist():
+    lamb = np.linspace(0, 2, 50)
+    av_entr = []
+    for i, l in enumerate(lamb):
+        print(i)
+        U = make_random_U_N(np.sqrt(32*np.pi**4 * l / (4**4)))
+        ew, ev = np.linalg.eig(U)
+        entr = []
+        for evv in ev:
+            evv = evv / np.dot(evv, evv)**0.5
+            rho = density_matrix(evv)
+            print(np.trace(rho))
+            entr.append(von_neuman_entropy(partial_trace(density_matrix(evv))))
+        av_entr.append(np.mean(entr))
+
+    plt.plot(lamb, av_entr)
+    plt.show()
+
+
+
 
 
 
