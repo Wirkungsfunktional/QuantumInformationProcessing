@@ -61,16 +61,31 @@ Id = np.eye(2)
 
 sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
 
+
+def make_state_standard_map(N: int, K: float) -> np.ndarray:
+        n = np.arange(0, N, 1)
+        m = np.arange(-N/2, N/2, 1)
+        V = np.exp(-1.j*N*K/(2*np.pi) * np.cos(2*np.pi*n/N))
+        T = np.exp(-1.j*np.pi*m**2/N)
+        f = np.fft.ifft(V)
+        U = np.zeros((N, N)) * 1.j
+        for i in range(N):
+            for j in range(N):
+                U[i][j] = f[j-i]*T[j]
+        return U
+
+
+
 def get_schmidt_decomposition(state: np.ndarray, N_a: int, N_b: int):
     # TODO: TestCase
-    A = np.zeros( (N_a, N_b) )
-    base_a = np.eye(N_a)
-    base_b = np.eye(N_b)
-    for i in range(N_a):
-        for j in range(N_b):
+    A = np.zeros( (2**N_a, 2**N_b) ) + 0.j
+    base_a = np.eye(2**N_a) + 0.j
+    base_b = np.eye(2**N_b) + 0.j
+    for i in range(2**N_a):
+        for j in range(2**N_b):
             A[i][j] = np.dot(state, np.kron(base_a[i], base_b[j]))
     u, s, vh = np.linalg.svd(A)
-    return s, np.dot(u, base_a), np.dot(vh, base_b)
+    return s, np.dot(np.conjugate(u.T), base_a), np.dot(vh, base_b)
 
 def make_state_from_schmidt_decomposition(sing_val, base_a, base_b):
     # TODO: TestCase
@@ -137,7 +152,7 @@ def von_neuman_entropy(rho):
     """Diagonalize the density matrix and calculate the classical entropy for
     this distribution."""
     assert check_density_operator(rho), "rho is not a density matrix"
-    ew, ev = np.linalg.eigh(rho)
+    ew, ev = np.linalg.eig(rho)
     return CIF.classical_entropy(np.abs(ew))
 
 
@@ -280,9 +295,20 @@ def partial_trace2(rho_ab):
     rho_a = np.zeros( (n, n) ) + 0.j
     rho_a[:n2,:n2] = rho_ab[0:n2,0:n2] + rho_ab[n2:2*n2,n2:2*n2]
     rho_a[:n2,n2:] = rho_ab[2*n2:3*n2,0:n2] + rho_ab[3*n2:,n2:2*n2]
-    rho_a[n2:,:n2] = np.conjugate(rho_a[:n2,n2:])
+    rho_a[n2:,:n2] = np.transpose(np.conjugate(rho_a[:n2,n2:]))
     rho_a[n2:,n2:] = rho_ab[2*n2:3*n2,2*n2:3*n2] + rho_ab[3*n2:,3*n2:]
     return rho_a
+
+def partial_trace3(rho, n):
+    N, M = rho.shape
+    red_rho = np.zeros( (n, n) ) + 0.j
+    d = np.eye(n)+ 0.j
+    for i in range(n):
+        B = np.kron(d, d[i])
+        red_rho += np.dot(B, np.dot(rho, B.T))
+    return red_rho
+
+
 
 def create_2qubit_random_density_matrix_ensemble(pur_end, N: int) -> List[np.ndarray]:
     """Create a List of Matrices. The check for positiv definitnes is done by
@@ -624,16 +650,17 @@ def qubit2_conv_comp_base_rep_to_svd_diag_rep(rho:np.ndarray):
 
 
 def make_cue_matrix(N: int) -> np.ndarray:
+    """
     mu = 0
     ep = 1/np.sqrt(N)
     sigma = ep**2 / 8
     K = np.random.normal(mu, sigma**0.5, (N ,N)) + 0.j
-    H = K + np.transpose(K)
+    H = K + np.transpose(K)"""
+    m = MF.make_matrix_ginibre(N)
+    H, R = np.linalg.qr(m)
     return H
 
-def make_random_U_N(eps: float) -> np.ndarray:
-    N1 = 4
-    N2 = 4
+def make_random_U_N(eps: float, N1, N2) -> np.ndarray:
     U = np.kron(make_cue_matrix(N1), make_cue_matrix(N2))
     U = np.dot(U, np.diag(np.exp(2.j*np.pi*eps*(np.random.random(N1 * N2)-0.5))))
     return U

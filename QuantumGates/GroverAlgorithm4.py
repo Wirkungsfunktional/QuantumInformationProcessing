@@ -48,7 +48,7 @@ qc.h(qr[2])
 
 U(qc, qr, flag)
 qc.h(qr[2])
-"""
+
 qc.h(qr[0])
 qc.h(qr[1])
 
@@ -64,10 +64,33 @@ qc.x(qr[1])
 
 qc.h(qr[0])
 qc.h(qr[1])
+
+
 """
+#Second implementation
 qc.h(qr[0])
 qc.cx(qr[0], qr[1])
 qc.h(qr[0])
+"""
+"""
+#Third implementation
+qc.h(qr[1])
+
+qc.x(qr[0])
+qc.x(qr[1])
+
+qc.h(qr[0])
+qc.h(qr[1])
+qc.cx(qr[0], qr[1])
+qc.h(qr[1])
+
+qc.x(qr[0])
+
+qc.h(qr[0])
+qc.h(qr[1])
+"""
+
+
 
 
 qc.measure(qr, cr)

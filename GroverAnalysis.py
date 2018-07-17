@@ -9,8 +9,15 @@ from mpl_toolkits.mplot3d import Axes3D
 import scipy.integrate as si
 from scipy.optimize import curve_fit
 
-
-
+__doc__ = """
+Program to examine the entanglment development in the grover algorithm for
+various N. The algorithm is implemented in matrix representation and the
+entanglment is calculate by entropy of the reduced system. The system is reduced
+towards a two qubit system. This kind of reduction does only make sense in case
+for one search solution. If there is more than one possible solution, than the
+problem becomes more complicated. Than we have to consider different partial
+traces of all possible qubit combinations.
+"""
 
 
 def plot_ent():
@@ -23,11 +30,11 @@ def plot_ent():
     N = 9
     state = QIF.make_n_dim_hadamard_state(N)
     state0 = np.copy(state)
-    U = 2*QIF.density_matrix(state0) - np.eye(2**N)
+    U = 2*QIF.density_matrix(state0) - np.eye(2**N) # U_i
     iter = int(np.pi/4 * np.sqrt(2**N)) * 2
     state_ind = -1
     for k in range(iter):
-        state[state_ind] *= -1
+        state[state_ind] *= -1  # U_f
         rho = QIF.density_matrix(state)
         for i in range(N-2):
             rho = QIF.partial_trace(rho)
