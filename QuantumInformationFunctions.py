@@ -61,6 +61,55 @@ Id = np.eye(2)
 
 sigma_y_4d = np.array([[0,0,0,-1],[0,0,1,0],[0,1,0,0],[-1,0,0,0]])
 
+def func_von_neuman_entropy(rho):
+    """Diagonalize the density matrix and calculate the classical entropy for
+    this distribution. See [NiCh2010] p. 510 for further information."""
+    assert check_density_operator(rho), "rho is not a density matrix"
+    ew, ev = np.linalg.eigh(rho)
+    return CIF.classical_entropy(np.abs(ew))
+
+def func_quantum_relative_entropy(rho: np.ndarray, sigma: np.ndarray) -> float:
+    """The quntum analogon to the Kullback-Leibler distance. See [NiCh2010]
+    p. 511 for further information."""
+    assert check_density_operator(rho), "Rho is not a density operator"
+    assert check_density_operator(sigma), "Sigma is not a density operator"
+    assert rho.shape == sigma.shape, "Rho has to be of the same dimension as \
+    sigma."
+    ew_sig, ev_sig = np.linalg.eigh(sigma)
+    log_sigma = np.dot(ev_sig, np.dot( np.diag(np.log2(ew_sig)),
+                               np.conjugate(ev_sig.T)))
+    return (func_von_neuman_entropy(rho) -
+            np.trace(np.dot(rho, log_sigma))).real
+
+
+
+def check_klein_inequality(rho: np.ndarray, sigma: np.ndarray) -> bool:
+    """Check the validity of the klein inequality. See [NiCh2010] p. 511
+    for further information."""
+    assert check_density_operator(rho), "Rho is not a density operator"
+    assert check_density_operator(sigma), "Sigma is not a density operator"
+    return func_quantum_relative_entropy(rho, sigma) >= 0.0
+
+
+def check_joint_entropy_theorem(N: int, n: int) -> bool:
+    """Check the validity of the joint entropy theorem. See [NiCh2010] p. 513
+    for further information. N is the size of the system B density matrix, n is
+    the number of the Set of density matrix of B in the convex combination."""
+    assert N >= 1
+    assert n >= 1
+    base_A = np.eye(n)
+    p = np.random.rand(n)
+    p /= np.sum(p)
+    rhs = CIF.classical_entropy(p)
+    rho = np.zeros( (N*n, N*n) ) + 0.j
+    for i in range(n):
+        rho_B = make_random_density_matrix_from_ginibre(N)
+        rho += p[i] * np.kron(density_matrix(base_A[i]), rho_B)
+        rhs += p[i]*func_von_neuman_entropy(rho_B)
+    return np.isclose(func_von_neuman_entropy(rho), rhs)
+
+
+
 
 def make_state_standard_map(N: int, K: float) -> np.ndarray:
         n = np.arange(0, N, 1)
@@ -323,7 +372,6 @@ def create_2qubit_random_density_matrix_ensemble(pur_end, N: int) -> List[np.nda
         rho = make_random_2qubit_density_matrix(p[n])
         if check_density_operator_property_hermiticty(rho):
             if check_density_operator_property_positiv(rho):
-                print(n)
                 ensemble.append(rho)
                 n += 1
     return ensemble
@@ -350,7 +398,6 @@ def create_2qubit_random_density_matrix_ensemble_by_pratial_trace(pur_end, N: in
         rho = make_random_4qubit_density_matrix()
         if purity(rho) <= 1.0:
             if check_density_operator_property_positiv(rho):
-                print(n)
                 m = partial_trace(rho)
                 m1 = partial_trace(m)
                 ensemble.append(m1)
@@ -387,6 +434,7 @@ def make_random_4qubit_density_matrix() -> np.ndarray:
 
 
 def make_random_2qubit_density_matrix(p) -> np.ndarray:
+    assert False, "Deprecated function: make_random_2qubit_density_matrix"
     """Creates a 4 dimmensional density matrix by using the Hilbert - Schmidt
     representation. The matrix can be pure or impure. Better to produce on
     vector with norm condition."""
@@ -508,20 +556,15 @@ def check_density_operator_property_hermiticty(rho: np.ndarray) -> bool:
     return np.allclose(rho, np.transpose(rho).conjugate())
 
 def check_density_operator_property_positiv(rho):
-    try:
-        if np.isclose(purity(rho), 1):
-            print("rho is pure, positivity check will not perform.")
-            # TODO: Find secure way for pure matrices
-            return True
-        np.linalg.cholesky(rho)
-        return True
-    except:
+    ew, ev = np.linalg.eig(rho)
+    if (np.min(ew)) < 0:
         return False
+    return True
 
 def check_density_operator(rho):
     flag = check_density_operator_property_trace(rho)
     flag = (flag and check_density_operator_property_hermiticty(rho))
-    #flag = (flag and check_density_operator_property_positiv(rho))
+    flag = (flag and check_density_operator_property_positiv(rho))
     return flag
 
 def kolmogorov_distance(rho1, rho2):
@@ -669,14 +712,12 @@ def entropy_dist():
     lamb = np.linspace(0, 2, 50)
     av_entr = []
     for i, l in enumerate(lamb):
-        print(i)
         U = make_random_U_N(np.sqrt(32*np.pi**4 * l / (4**4)))
         ew, ev = np.linalg.eig(U)
         entr = []
         for evv in ev:
             evv = evv / np.dot(evv, evv)**0.5
             rho = density_matrix(evv)
-            print(np.trace(rho))
             entr.append(von_neuman_entropy(partial_trace(density_matrix(evv))))
         av_entr.append(np.mean(entr))
 

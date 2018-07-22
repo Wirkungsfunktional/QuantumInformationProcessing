@@ -87,15 +87,6 @@ class QuantumInformationFunctionsTestCase(unittest.TestCase):
                                 [11, 27]] )
         self.assertTrue(np.array_equal(QIF.partial_trace(rho), rho_erg))
 
-    def test_partial_trace_random(self):
-        m1 = QIF.make_random_2qubit_density_matrix(0.3)
-        m2 = QIF.make_random_2qubit_density_matrix(0.3)
-        m3 = np.kron(m1, m2)
-        m4 = QIF.partial_trace(QIF.partial_trace(QIF.partial_trace(m3)))
-
-        self.assertTrue(QIF.check_density_operator_property_trace(m4))
-        self.assertTrue(QIF.check_density_operator_property_hermiticty(m4))
-        self.assertTrue(QIF.check_density_operator_property_positiv(m4))
 
     def test_von_neuman_entropy(self):
         m = np.array([  [1 + 1/3, 1/np.sqrt(3) -1.j/np.sqrt(3)],
@@ -127,19 +118,19 @@ class QuantumInformationFunctionsTestCase(unittest.TestCase):
         self.assertTrue(np.allclose(QIF.make_n_dim_hadamard_state(3), state0))
 
 
-    def test_create_base_n_comp(self):
-        check_base = [  np.array([1,0,0,0]),
-                        np.array([0,1,0,0]),
-                        np.array([0,0,1,0]),
-                        np.array([0,0,0,1])]
-        test_base = QIF.create_base_n_comp(2)
-        for i, test_state in enumerate(test_base):
-            self.assertTrue(np.allclose(test_state, check_base[i]))
+    def test_klein_inequatity(self):
+        for i in range(2, 10):
+            rho = QIF.make_random_density_matrix_from_ginibre(i)
+            sigma = QIF.make_random_density_matrix_from_ginibre(i)
+            self.assertTrue(QIF.check_klein_inequality(rho, sigma))
 
+        self.assertTrue(QIF.check_klein_inequality(rho, rho))
+        self.assertTrue(QIF.check_klein_inequality(sigma, sigma))
 
-
-
-
+    def test_joint_entropy_theorem(self):
+        for n in range(2, 5):
+            for N in range(2, 4):
+                self.assertTrue(QIF.check_joint_entropy_theorem(N, n))
 
 
 
